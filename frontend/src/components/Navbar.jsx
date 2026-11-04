@@ -313,7 +313,7 @@ const Navbar = () => {
           >
             <svg
               width="32"
-              height="32"
+              height="35"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

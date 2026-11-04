@@ -1,1 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+
 @import "tailwindcss";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: "Outfit", sans-serif;
+}
+
+@theme {
+  --color-primary: #4bfb8b;
+  --color-primary-dull: #44ae7c;
+}

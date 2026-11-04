@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { dummyProducts } from "../assets/assets";
 
 const AppContext = createContext();
 
@@ -8,6 +9,7 @@ export const AppContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
   const [showUserLogin, setShowUserLogin] = useState(false);
+  const [products, setProducts] = useState(dummyProducts);
 
   const value = {
     navigate,
@@ -17,6 +19,8 @@ export const AppContextProvider = ({ children }) => {
     setIsSeller,
     showUserLogin,
     setShowUserLogin,
+    products,
+    setProducts,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

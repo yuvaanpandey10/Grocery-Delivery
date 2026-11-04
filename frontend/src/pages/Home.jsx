@@ -1,17 +1,15 @@
-// Import the banner component (already exists)
 import MainBanner from "../components/MainBanner";
-// Import the new Category component
 import Category from "../components/Category";
+// Import the Best Sellers section
+import BestSellers from "../components/BestSellers";
 
 const Home = () => {
   return (
-    // mt-10 = space below the navbar
     <div className="mt-10">
-      {/* Top banner */}
       <MainBanner />
-
-      {/* Categories section, shows below the banner */}
       <Category />
+      {/* Best Sellers shows below Categories */}
+      <BestSellers />
     </div>
   );
 };

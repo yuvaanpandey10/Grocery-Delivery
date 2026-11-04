@@ -67,7 +67,7 @@ const ProductCard = ({ product }) => {
               </button>
             ) : (
               // count is 1 or more: show COUNTER ( - count + )
-              <div className="flex items-center justify-center gap-2 md:w-20 w-16 h-8.5 bg-primary/25 rounded select-none">
+              <div className="flex items-center justify-center gap-2 md:w-20 w-16 h-8.5 text-gray-800 rounded select-none">
                 {/* MINUS: never below 0 (at 0 the Add button comes back) */}
                 <button
                   onClick={() => setCount((prev) => Math.max(prev - 1, 0))}

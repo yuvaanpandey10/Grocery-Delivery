@@ -1,8 +1,14 @@
 // Import the categories array from assets.js
 // Each item has: text, path, image, bgColor
 import { categories } from "../assets/assets";
+// Import the context hook so we can use `navigate` from AppContext.jsx
+import { useAppContext } from "../context/AppContext";
 
 const Category = () => {
+  // Get the navigate function from AppContext
+  // (it is the same useNavigate from react-router-dom, shared through context)
+  const { navigate } = useAppContext();
+
   return (
     // OUTER WRAPPER (same trick as MainBanner)
     // relative left-1/2 w-screen -translate-x-1/2 = break out of App.jsx padding
@@ -19,7 +25,7 @@ const Category = () => {
         </h2>
 
         {/* GRID: this makes the responsive layout
-            grid-cols-2   = 2 cards per row on small phones
+            grid-cols-2    = 2 cards per row on small phones
             sm:grid-cols-3 = 3 per row on small tablets (640px+)
             lg:grid-cols-4 = 4 per row on laptops (1024px+)
             xl:grid-cols-7 = all 7 in one row on big screens (1280px+)
@@ -32,20 +38,25 @@ const Category = () => {
               // key is required by React when using map. It must be unique.
               key={index}
               // group = lets the image react when the CARD is hovered
+              // cursor-pointer = shows the hand cursor because the card is clickable
               // py-5 px-3 = padding inside the card
               // gap-2 = space between the image and the text
               // rounded-lg = rounded corners
               // flex flex-col justify-center items-center = stack image + text
               //   vertically and center them
-              className="group py-5 px-3 gap-2 rounded-lg flex flex-col justify-center items-center"
+              className="group cursor-pointer py-5 px-3 gap-2 rounded-lg flex flex-col justify-center items-center"
               // Background color comes from assets.js (category.bgColor).
               // We use inline style because Tailwind can't make classes
               // from values that are only known at runtime.
               style={{ backgroundColor: category.bgColor }}
-              // To make the cards clickable later, add:
-              //   cursor-pointer   (in className)
-              //   onClick={() => navigate(`/products/${category.path.toLowerCase()}`)}
-              // and get navigate from useAppContext() at the top of the component.
+              // ON CLICK:
+              // 1. navigate to /products/<category path in lowercase>
+              //    Example: "Vegetables" -> /products/vegetables
+              // 2. scroll the page to the top after navigating
+              onClick={() => {
+                navigate(`/products/${category.path.toLowerCase()}`);
+                window.scrollTo(0, 0);
+              }}
             >
               {/* CATEGORY IMAGE
                   group-hover:scale-108 = zoom in a little when the card is hovered

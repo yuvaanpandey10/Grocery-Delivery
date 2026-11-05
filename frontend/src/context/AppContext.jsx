@@ -13,6 +13,9 @@ export const AppContextProvider = ({ children }) => {
   const [products, setProducts] = useState(dummyProducts);
   const [cartItems, setCartItems] = useState({});
 
+  // NEW: the text typed in the search box (shared by Navbar and AllProducts)
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Fetch All Products
   const fetchProducts = async () => {
     setProducts(dummyProducts);
@@ -69,6 +72,8 @@ export const AppContextProvider = ({ children }) => {
     addToCart,
     updateCartItem,
     removeFromCart,
+    searchQuery, // NEW
+    setSearchQuery, // NEW
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

@@ -1,10 +1,13 @@
+import dotenv from "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import connectDB from "./configs/db.js";
 
 const app = express();
 
 const PORT = process.env.PORT || 4000;
+await connectDB();
 
 // Allow requests from specific origins
 const allowedOrigins = ["http://localhost:5173"];

@@ -13,8 +13,15 @@ export const AppContextProvider = ({ children }) => {
   const [products, setProducts] = useState(dummyProducts);
   const [cartItems, setCartItems] = useState({});
 
-  // NEW: the text typed in the search box (shared by Navbar and AllProducts)
+  // The text typed in the search box (shared by Navbar and AllProducts)
   const [searchQuery, setSearchQuery] = useState("");
+
+  // NEW: all addresses the user added (list of address objects)
+  const [addresses, setAddresses] = useState([]);
+  // NEW: the address chosen for delivery (one address object, or null)
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  // NEW: all placed orders (newest first). Your My Orders page can read this later.
+  const [orders, setOrders] = useState([]);
 
   // Fetch All Products
   const fetchProducts = async () => {
@@ -56,6 +63,36 @@ export const AppContextProvider = ({ children }) => {
     toast.success("Removed from Cart");
   };
 
+  // NEW: Add a new address, then select it for delivery.
+  // Date.now() gives a simple unique id (no backend yet).
+  const addAddress = (address) => {
+    const newAddress = { ...address, _id: Date.now().toString() };
+    setAddresses((prev) => [...prev, newAddress]);
+    setSelectedAddress(newAddress);
+    toast.success("Address added");
+  };
+
+  // NEW: Place an order: save it, then empty the cart.
+  // The order has the same shape as your dummyOrders in assets.js.
+  const placeOrder = ({ items, amount, address, paymentType }) => {
+    const newOrder = {
+      _id: Date.now().toString(),
+      userId: user?._id ?? null, // I could not check the shape of "user"
+      items,
+      amount,
+      address,
+      status: "Order Placed",
+      paymentType, // "COD" or "Online"
+      // PLACEHOLDER: no real payment gateway yet, so "Online" is marked as paid.
+      isPaid: paymentType === "Online",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+    setCartItems({});
+    toast.success("Order placed successfully");
+  };
+
   const value = {
     navigate,
     user,
@@ -72,8 +109,14 @@ export const AppContextProvider = ({ children }) => {
     addToCart,
     updateCartItem,
     removeFromCart,
-    searchQuery, // NEW
-    setSearchQuery, // NEW
+    searchQuery,
+    setSearchQuery,
+    addresses, // NEW
+    selectedAddress, // NEW
+    setSelectedAddress, // NEW
+    addAddress, // NEW
+    orders, // NEW
+    placeOrder, // NEW
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

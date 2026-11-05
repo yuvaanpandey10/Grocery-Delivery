@@ -1,3 +1,6 @@
+import { useState, useEffect, useRef } from "react";
+// toast is used here only for error messages (the success toasts are in the context)
+import toast from "react-hot-toast";
 // assets = icons (remove_icon = red X, arrow_right_icon_colored = arrow)
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
@@ -5,13 +8,55 @@ import { useAppContext } from "../context/AppContext";
 
 const Cart = () => {
   // FROM CONTEXT:
-  // products       = all products
-  // cartItems      = object of counts by product id, e.g. { gd46g23h: 2 }
-  // setCartItems   = used to delete a whole product from the cart (X button)
-  // updateCartItem = sets a product's quantity directly (used by the Qty dropdown)
-  // navigate       = used by "Continue Shopping"
-  const { products, cartItems, setCartItems, updateCartItem, navigate } =
-    useAppContext();
+  // products         = all products
+  // cartItems        = object of counts by product id, e.g. { gd46g23h: 2 }
+  // setCartItems     = used to delete a whole product from the cart (X button)
+  // updateCartItem   = sets a product's quantity directly (Qty dropdown)
+  // navigate         = used for page changes
+  // user, setShowUserLogin = to ask the user to login before ordering
+  // addresses, selectedAddress, setSelectedAddress = delivery address
+  // placeOrder       = saves the order and empties the cart
+  const {
+    products,
+    cartItems,
+    setCartItems,
+    updateCartItem,
+    navigate,
+    user,
+    setShowUserLogin,
+    addresses,
+    selectedAddress,
+    setSelectedAddress,
+    placeOrder,
+  } = useAppContext();
+
+  // ---------- LOCAL STATE (only used on this page) ----------
+  // Is the address list (under "Change") open?
+  const [showAddressList, setShowAddressList] = useState(false);
+  // Chosen payment method: "COD" or "Online"
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+
+  // Ref on the address area, to detect clicks outside of it
+  const addressRef = useRef(null);
+
+  // ---------- EFFECT: close the address list with Escape or an outside click ----------
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") setShowAddressList(false);
+    };
+    const onClick = (e) => {
+      if (addressRef.current && !addressRef.current.contains(e.target)) {
+        setShowAddressList(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    // CLEANUP
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClick);
+    };
+  }, []);
 
   // 1) BUILD THE CART LIST
   // cartItems only has ids and counts, so we find the full product for each id
@@ -49,6 +94,52 @@ const Cart = () => {
   // 4) GO TO ALL PRODUCTS and scroll to the top
   const continueShopping = () => {
     navigate("/products");
+    window.scrollTo(0, 0);
+  };
+
+  // 5) NEW: GO TO THE ADD ADDRESS PAGE and scroll to the top
+  const goToAddAddress = () => {
+    setShowAddressList(false);
+    navigate("/add-address");
+    window.scrollTo(0, 0);
+  };
+
+  // 6) NEW: BUTTON TEXT depends on the address and the payment method
+  // - no address yet            -> "Add Address"
+  // - Cash On Delivery          -> "Place Order"
+  // - Online Payment            -> "Proceed to Checkout"
+  const orderButtonText = !selectedAddress
+    ? "Add Address"
+    : paymentMethod === "Online"
+      ? "Proceed to Checkout"
+      : "Place Order";
+
+  // 7) ORDER BUTTON CLICK
+  const handleOrderButton = () => {
+    // No address: open the Add Address page
+    if (!selectedAddress) {
+      goToAddAddress();
+      return;
+    }
+    // Must be logged in (opens your Login popup)
+    if (!user) {
+      toast.error("Please login to place your order");
+      setShowUserLogin(true);
+      return;
+    }
+    // Order items have the same shape as dummyOrders: { product, quantity }
+    const items = cartList.map((item) => ({
+      product: products.find((p) => p._id === item._id),
+      quantity: item.quantity,
+    }));
+    placeOrder({
+      items,
+      amount: Number(totalAmount.toFixed(2)),
+      address: selectedAddress,
+      paymentType: paymentMethod, // "COD" or "Online"
+    });
+    // Your My Orders page is not built yet, so we go Home
+    navigate("/");
     window.scrollTo(0, 0);
   };
 
@@ -179,30 +270,78 @@ const Cart = () => {
             </h2>
             <hr className="my-5 border-gray-300" />
 
-            {/* DELIVERY ADDRESS: no address form yet, so it is empty.
-                "Change" does nothing for now (we will build it later). */}
+            {/* DELIVERY ADDRESS.
+                addressRef wraps the row + the list, to detect outside clicks. */}
             <p className="text-sm font-medium uppercase text-gray-700">
               Delivery Address
             </p>
-            <div className="mt-2 flex items-start justify-between gap-3">
-              <p className="text-sm text-gray-500">No address found</p>
-              <button
-                type="button"
-                className="cursor-pointer text-sm text-primary hover:underline"
-              >
-                Change
-              </button>
+            <div ref={addressRef} className="relative mt-2">
+              <div className="flex items-start justify-between gap-3">
+                {/* Selected address, or a message when there is none */}
+                <p className="text-sm text-gray-500">
+                  {selectedAddress
+                    ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.country}`
+                    : "No address found"}
+                </p>
+                {/* CHANGE: opens / closes the address list */}
+                <button
+                  type="button"
+                  onClick={() => setShowAddressList((v) => !v)}
+                  className="cursor-pointer text-sm text-primary hover:underline"
+                >
+                  Change
+                </button>
+              </div>
+
+              {/* ADDRESS LIST (opens under the address line) */}
+              {showAddressList && (
+                <div className="absolute left-0 right-0 top-full z-10 mt-2 border border-gray-300 bg-white py-1 shadow-lg">
+                  {/* MAP METHOD: one button for each saved address.
+                      Click = use this address for delivery. */}
+                  {addresses.map((addr) => (
+                    <button
+                      key={addr._id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedAddress(addr);
+                        setShowAddressList(false);
+                      }}
+                      className={`block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-gray-500 transition-colors hover:bg-primary/10 ${
+                        selectedAddress?._id === addr._id ? "bg-primary/10" : ""
+                      }`}
+                    >
+                      <span className="block font-medium text-gray-700">
+                        {addr.firstName} {addr.lastName}
+                      </span>
+                      {addr.street}, {addr.city}, {addr.state}, {addr.country}
+                    </button>
+                  ))}
+
+                  {/* ADD ADDRESS: opens the Add Address page */}
+                  <div className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={goToAddAddress}
+                      className="w-full cursor-pointer rounded border border-primary/40 bg-primary/10 py-2 text-sm font-medium text-primary transition hover:bg-primary/20"
+                    >
+                      + Add address
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* PAYMENT METHOD: only Cash On Delivery for now */}
+            {/* PAYMENT METHOD: Cash On Delivery or Online Payment */}
             <p className="mt-6 text-sm font-medium uppercase text-gray-700">
               Payment Method
             </p>
             <select
-              defaultValue="COD"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
               className="mt-2 w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
             >
               <option value="COD">Cash On Delivery</option>
+              <option value="Online">Online Payment</option>
             </select>
 
             <hr className="my-5 border-gray-300" />
@@ -227,12 +366,13 @@ const Cart = () => {
               </p>
             </div>
 
-            {/* PLACE ORDER: does nothing for now (we will build it later) */}
+            {/* ORDER BUTTON: the text changes (see orderButtonText above) */}
             <button
               type="button"
+              onClick={handleOrderButton}
               className="mt-6 w-full cursor-pointer bg-primary py-3 font-medium text-white transition hover:bg-primary-dull"
             >
-              Place Order
+              {orderButtonText}
             </button>
           </div>
         </div>

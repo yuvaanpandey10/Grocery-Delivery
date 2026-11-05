@@ -1,4 +1,6 @@
 import Navbar from "./components/Navbar.jsx";
+// Import the Footer
+import Footer from "./components/Footer.jsx";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import { Toaster } from "react-hot-toast";
@@ -18,6 +20,9 @@ const App = () => {
           <Route path="/" element={<Home />} />
         </Routes>
       </div>
+
+      {/* Footer shows at the bottom of every page, except seller pages */}
+      {isSellerPath ? null : <Footer />}
     </div>
   );
 };

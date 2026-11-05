@@ -2,6 +2,8 @@ import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
+// Import the All Products page
+import AllProducts from "./pages/AllProducts.jsx";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import { useAppContext } from "./context/AppContext";
@@ -14,7 +16,7 @@ const App = () => {
     <div>
       {isSellerPath ? null : <Navbar />}
 
-      {/* Login popup: shows only when showUserLogin is true (this line was missing) */}
+      {/* Login popup: shows only when showUserLogin is true */}
       {showUserLogin ? <Login /> : null}
 
       <Toaster />
@@ -23,6 +25,8 @@ const App = () => {
       >
         <Routes>
           <Route path="/" element={<Home />} />
+          {/* New route: the Navbar "All Products" link goes here */}
+          <Route path="/products" element={<AllProducts />} />
         </Routes>
       </div>
 

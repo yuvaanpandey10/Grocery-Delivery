@@ -10,8 +10,10 @@ import CategoryProducts from "./pages/CategoryProducts.jsx";
 import ProductDetails from "./pages/ProductDetails.jsx";
 // The Cart page
 import Cart from "./pages/Cart.jsx";
-// NEW: the page with the form to add a delivery address
+// The page with the form to add a delivery address
 import AddAddress from "./pages/AddAddress.jsx";
+// NEW: the page that lists the user's orders
+import MyOrders from "./pages/MyOrders.jsx";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import { useAppContext } from "./context/AppContext";
@@ -41,8 +43,10 @@ const App = () => {
           <Route path="/products/:category/:id" element={<ProductDetails />} />
           {/* The Navbar cart button and "Buy now" go here */}
           <Route path="/cart" element={<Cart />} />
-          {/* NEW: "Add address" in the cart goes here */}
+          {/* "Add address" in the cart goes here */}
           <Route path="/add-address" element={<AddAddress />} />
+          {/* NEW: Navbar profile menu "My Orders" goes here */}
+          <Route path="/my-orders" element={<MyOrders />} />
         </Routes>
       </div>
 

@@ -6,8 +6,10 @@ import Home from "./pages/Home.jsx";
 import AllProducts from "./pages/AllProducts.jsx";
 // The page that shows one category
 import CategoryProducts from "./pages/CategoryProducts.jsx";
-// NEW: the page that shows one product with all its details
+// The page that shows one product with all its details
 import ProductDetails from "./pages/ProductDetails.jsx";
+// NEW: the Cart page
+import Cart from "./pages/Cart.jsx";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import { useAppContext } from "./context/AppContext";
@@ -33,8 +35,10 @@ const App = () => {
           <Route path="/products" element={<AllProducts />} />
           {/* :category is the word from assets.js "path", e.g. /products/fruits */}
           <Route path="/products/:category" element={<CategoryProducts />} />
-          {/* NEW: e.g. /products/vegetables/gd46g23h (category + product id) */}
+          {/* e.g. /products/vegetables/gd46g23h (category + product id) */}
           <Route path="/products/:category/:id" element={<ProductDetails />} />
+          {/* NEW: the Navbar cart button and "Buy now" go here */}
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </div>
 

@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================
 import React from "react";
-// NEW: useLocation tells us which page we are on (to know if we must go to /products)
+// useLocation tells us which page we are on (to know if we must go to /products)
 import { NavLink, useLocation } from "react-router-dom";
 // Your images (logo, cart icon, profile icon, ...)
 import { assets } from "../assets/assets";
@@ -77,7 +77,8 @@ const Navbar = () => {
   const profileRef = React.useRef(null);
 
   // ---------- SHARED APP DATA ----------
-  // NEW: searchQuery + setSearchQuery come from AppContext (no local state)
+  // searchQuery + setSearchQuery come from AppContext (no local state)
+  // NEW: cartItems also comes from AppContext (used for the cart badge)
   const {
     user,
     setUser,
@@ -85,15 +86,21 @@ const Navbar = () => {
     navigate,
     searchQuery,
     setSearchQuery,
+    cartItems,
   } = useAppContext();
 
-  // NEW: the current URL path, e.g. "/" or "/products"
+  // The current URL path, e.g. "/" or "/products"
   const { pathname } = useLocation();
 
-  // TODO: replace with the real cart count from your context
-  const cartCount = 3;
+  // NEW: REAL CART COUNT = total items in the cart.
+  // cartItems looks like { gd46g23h: 2, gd47g34h: 1 }, so we add up the counts:
+  // 2 + 1 = 3. It updates by itself every time the cart changes.
+  const cartCount = Object.values(cartItems).reduce(
+    (sum, quantity) => sum + quantity,
+    0,
+  );
 
-  // ---------- NEW: SEARCH ----------
+  // ---------- SEARCH ----------
   // Runs on every key typed (live search), in BOTH search boxes.
   // 1) save the text in the context  2) if we are not on /products, go there.
   const handleSearch = (e) => {
@@ -194,13 +201,13 @@ const Navbar = () => {
               type="search"
               aria-label="Search products"
               placeholder="Search products"
-              value={searchQuery} // NEW: input shows the text saved in the context
-              onChange={handleSearch} // NEW: live search on every key
+              value={searchQuery} // input shows the text saved in the context
+              onChange={handleSearch} // live search on every key
               className="min-w-0 flex-1 bg-transparent text-[15px] text-gray-900 outline-none placeholder:text-gray-500"
             />
           </form>
 
-          {/* --- 3b. Cart button --- */}
+          {/* --- 3b. Cart button (the badge shows the real cart count) --- */}
           <button
             type="button"
             onClick={() => navigate("/cart")}
@@ -208,6 +215,7 @@ const Navbar = () => {
             aria-label={`Cart, ${cartCount} items`}
           >
             <img src={assets.nav_cart_icon} alt="" className="w-7 opacity-80" />
+            {/* Badge: only shown when the cart has at least 1 item */}
             {cartCount > 0 && (
               <span className="absolute right-0 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-gray-900">
                 {cartCount}
@@ -309,7 +317,7 @@ const Navbar = () => {
           className="border-t border-gray-200 bg-white md:hidden"
         >
           <ul className="flex flex-col gap-1 px-5 py-4 sm:px-6">
-            {/* NEW: Phone search box (first item in the menu).
+            {/* Phone search box (first item in the menu).
                 Same state as the desktop box, so the text is shared.
                 Pressing Enter closes the menu so you can see the results. */}
             <li className="pb-2">

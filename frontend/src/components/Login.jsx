@@ -28,7 +28,7 @@ const Login = () => {
     // fixed + inset-0 = full screen | z-[100] = above the sticky Navbar (z-50)
     <div
       onClick={() => setShowUserLogin(false)}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 px-4"
     >
       {/* White card. stopPropagation = clicking inside does NOT close the popup */}
       <form

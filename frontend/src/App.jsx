@@ -4,6 +4,8 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 // Import the All Products page
 import AllProducts from "./pages/AllProducts.jsx";
+// NEW: the page that shows one category
+import CategoryProducts from "./pages/CategoryProducts.jsx";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import { useAppContext } from "./context/AppContext";
@@ -25,8 +27,10 @@ const App = () => {
       >
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* New route: the Navbar "All Products" link goes here */}
+          {/* The Navbar "All Products" link goes here */}
           <Route path="/products" element={<AllProducts />} />
+          {/* NEW: :category is the word from assets.js "path", e.g. /products/Fruits */}
+          <Route path="/products/:category" element={<CategoryProducts />} />
         </Routes>
       </div>
 

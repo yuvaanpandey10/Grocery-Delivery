@@ -1,15 +1,17 @@
 import MainBanner from "../components/MainBanner";
 import Category from "../components/Category";
-// Import the Best Sellers section
 import BestSellers from "../components/BestSellers";
+// Import the Bottom Banner section
+import BottomBanner from "../components/BottomBanner";
 
 const Home = () => {
   return (
     <div className="mt-10">
       <MainBanner />
       <Category />
-      {/* Best Sellers shows below Categories */}
       <BestSellers />
+      {/* Bottom Banner shows below Best Sellers */}
+      <BottomBanner />
     </div>
   );
 };

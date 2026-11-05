@@ -14,10 +14,11 @@ const ProductDetails = () => {
   const { products, cartItems, addToCart, removeFromCart, navigate } =
     useAppContext();
 
-  // 2) NEW: which thumbnail is selected (its position: 0, 1, 2, 3).
+  // 2) Which thumbnail is selected (its position: 0, 1, 2, 3).
   //    We use the position, not the picture, because repeated pictures look the same.
-  const [selection, setSelection] = React.useState({ id, index: 0 });
-  const selectedIndex = selection.id === id ? selection.index : 0;
+  const [thumbnailSelection, setThumbnailSelection] = React.useState(null);
+  const selectedIndex =
+    thumbnailSelection?.productId === id ? thumbnailSelection.index : 0;
 
   // 3) Find this product by its id
   const product = products.find((p) => p._id === id);
@@ -31,7 +32,7 @@ const ProductDetails = () => {
     );
   }
 
-  // 4) NEW: THUMBNAIL LIST (always at least 4).
+  // 4) THUMBNAIL LIST (always at least 4).
   //    A product with 4+ images uses its own images.
   //    A product with fewer images repeats its first image to fill 4 thumbnails.
   const thumbnails = Array.from(
@@ -72,13 +73,15 @@ const ProductDetails = () => {
               flex-col-reverse on phone = big image on top, thumbnails below. */}
           <div className="flex flex-col-reverse md:flex-row md:items-start gap-3">
             {/* THUMBNAILS (MAP METHOD): one button for each item in the thumbnail list.
-                NEW: click saves the position (index) of the thumbnail. */}
+                Click saves the position (index) of the thumbnail. */}
             <div className="flex md:flex-col gap-3">
               {thumbnails.map((img, index) => (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => setSelection({ id, index })}
+                  onClick={() =>
+                    setThumbnailSelection({ productId: id, index })
+                  }
                   className={`w-16 h-16 md:w-20 md:h-20 cursor-pointer rounded border p-2 bg-white ${
                     index === selectedIndex
                       ? "border-primary"
@@ -182,9 +185,14 @@ const ProductDetails = () => {
                 )}
               </div>
 
-              {/* Buy now: button only, does nothing for now (as you asked) */}
+              {/* NEW: Buy now opens the cart page (/cart) and scrolls to the top.
+                  It does not add the product to the cart. */}
               <button
                 type="button"
+                onClick={() => {
+                  navigate("/cart");
+                  window.scrollTo(0, 0);
+                }}
                 className="flex-1 cursor-pointer bg-primary py-3.5 font-medium text-white transition hover:bg-primary-dull"
               >
                 Buy now
@@ -294,7 +302,7 @@ const ProductDetails = () => {
           ))}
         </div>
 
-        {/* NEW: SHOW MORE BUTTON
+        {/* SHOW MORE BUTTON
             Opens the All Products page (/products) and scrolls to the top. */}
         <div className="mt-10 flex justify-center">
           <button

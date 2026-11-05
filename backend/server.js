@@ -3,6 +3,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import connectDB from "./configs/db.js";
+import userRouter from "./routes/userRoute.js";
 
 const app = express();
 

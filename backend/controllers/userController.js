@@ -38,13 +38,11 @@ export const registerUser = async (req, res) => {
       maxAge: 3600000, // 1 hour
     });
 
-    return res
-      .status(201)
-      .json({
-        success: true,
-        user: { email: user.email, name: user.name },
-        message: "User registered successfully",
-      });
+    return res.status(201).json({
+      success: true,
+      user: { email: user.email, name: user.name },
+      message: "User registered successfully",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });

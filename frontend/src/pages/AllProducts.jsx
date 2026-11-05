@@ -9,15 +9,28 @@ const AllProducts = () => {
   // cartItems      = object of counts by product id, e.g. { gd46g23h: 2 }
   // addToCart      = adds 1 to a product's count
   // removeFromCart = removes 1 from a product's count (deletes it at 0)
-  // searchQuery    = NEW: the text typed in the Navbar search box
-  const { products, cartItems, addToCart, removeFromCart, searchQuery } =
-    useAppContext();
+  // searchQuery    = the text typed in the Navbar search box
+  // navigate       = NEW: used to open the product details page
+  const {
+    products,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    searchQuery,
+    navigate,
+  } = useAppContext();
 
-  // NEW: SEARCH FILTER
+  // NEW: open the product page, e.g. /products/vegetables/gd46g23h
+  const openProduct = (product) => {
+    navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+    window.scrollTo(0, 0);
+  };
+
+  // SEARCH FILTER
   // trim() removes spaces at the start/end, toLowerCase() ignores capital letters.
   const query = searchQuery.trim().toLowerCase();
 
-  // NEW: keep only products whose name OR category contains the typed text.
+  // Keep only products whose name OR category contains the typed text.
   // When the box is empty, query is "" and every product matches (shows all 30).
   const filteredProducts = products.filter(
     (product) =>
@@ -34,7 +47,7 @@ const AllProducts = () => {
           All Products
         </h1>
 
-        {/* NEW: if nothing matches, show a simple message instead of the grid */}
+        {/* If nothing matches, show a simple message instead of the grid */}
         {filteredProducts.length === 0 ? (
           <p className="mt-10 text-center text-base md:text-lg text-gray-500">
             No products found for "{searchQuery.trim()}"
@@ -50,8 +63,12 @@ const AllProducts = () => {
                 key={product._id}
                 className="group border border-gray-500/20 rounded-md px-3 md:px-4 py-3 bg-white"
               >
-                {/* IMAGE: product.image is an array, [0] = first image */}
-                <div className="cursor-pointer flex items-center justify-center">
+                {/* IMAGE: product.image is an array, [0] = first image.
+                    NEW: click opens the product page */}
+                <div
+                  className="cursor-pointer flex items-center justify-center"
+                  onClick={() => openProduct(product)}
+                >
                   <img
                     src={product.image[0]}
                     alt={product.name}
@@ -63,8 +80,12 @@ const AllProducts = () => {
                   {/* Category, for example "Vegetables" */}
                   <p>{product.category}</p>
 
-                  {/* Product name, truncate = adds ... if too long */}
-                  <p className="text-gray-700 font-medium text-lg truncate">
+                  {/* Product name, truncate = adds ... if too long.
+                      NEW: click opens the product page */}
+                  <p
+                    className="cursor-pointer text-gray-700 font-medium text-lg truncate"
+                    onClick={() => openProduct(product)}
+                  >
                     {product.name}
                   </p>
 

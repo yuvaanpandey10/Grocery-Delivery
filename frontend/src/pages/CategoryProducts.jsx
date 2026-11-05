@@ -11,8 +11,16 @@ const CategoryProducts = () => {
   const { category } = useParams();
   const categoryKey = category.toLowerCase();
 
-  // FROM CONTEXT: all products, cart data and cart functions
-  const { products, cartItems, addToCart, removeFromCart } = useAppContext();
+  // FROM CONTEXT: all products, cart data, cart functions
+  // NEW: navigate is added, to open the product details page
+  const { products, cartItems, addToCart, removeFromCart, navigate } =
+    useAppContext();
+
+  // NEW: open the product page, e.g. /products/vegetables/gd46g23h
+  const openProduct = (product) => {
+    navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
+    window.scrollTo(0, 0);
+  };
 
   // 2) Find the category info (we only need its "text" for the header)
   const categoryInfo = categories.find(
@@ -62,8 +70,12 @@ const CategoryProducts = () => {
               key={product._id}
               className="group border border-gray-500/20 rounded-md px-3 md:px-4 py-3 bg-white"
             >
-              {/* IMAGE: product.image is an array, [0] = first image */}
-              <div className="cursor-pointer flex items-center justify-center">
+              {/* IMAGE: product.image is an array, [0] = first image.
+                  NEW: click opens the product page */}
+              <div
+                className="cursor-pointer flex items-center justify-center"
+                onClick={() => openProduct(product)}
+              >
                 <img
                   src={product.image[0]}
                   alt={product.name}
@@ -74,7 +86,11 @@ const CategoryProducts = () => {
               <div className="mt-4 text-gray-500/60 text-sm">
                 <p>{product.category}</p>
 
-                <p className="text-gray-700 font-medium text-lg truncate">
+                {/* NEW: click on the name opens the product page */}
+                <p
+                  className="cursor-pointer text-gray-700 font-medium text-lg truncate"
+                  onClick={() => openProduct(product)}
+                >
                   {product.name}
                 </p>
 

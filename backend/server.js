@@ -18,10 +18,10 @@ app.use(cookieParser());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Define routes
-
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("API is running...");
 });
+app.use("/api/users", userRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

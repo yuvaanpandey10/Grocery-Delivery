@@ -1,11 +1,41 @@
 // Import logo and the footer links data from assets.js
 import { assets, footerLinks } from "../assets/assets";
+// Import navigate() from your Context API
+import { useAppContext } from "../context/AppContext";
 
 const Footer = () => {
-  // Runs when a footer link is clicked.
-  // If the link is just "#" (placeholder), stop the browser from jumping to the top.
-  const handleLinkClick = (e, url) => {
-    if (url === "#") e.preventDefault();
+  const { navigate } = useAppContext();
+
+  // ---------- WHAT EACH LINK DOES ----------
+  // The key is the link text from footerLinks in assets.js.
+  // Any link that is NOT listed here does nothing when clicked.
+  const linkActions = {
+    // Go to the home page and scroll to the top
+    Home: () => {
+      navigate("/");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    // Go to the contact page (not built yet) and scroll to the top
+    "Contact Us": () => {
+      navigate("/contact");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    // Go to the home page, then scroll to the section with id="best-sellers"
+    "Best Sellers": () => {
+      navigate("/");
+      // small delay so the home page is drawn before we scroll
+      setTimeout(() => {
+        document
+          .getElementById("best-sellers")
+          ?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    },
+  };
+
+  // Runs when a footer link is clicked
+  const handleLinkClick = (e, text) => {
+    e.preventDefault(); // always stop the browser from jumping to the top
+    linkActions[text]?.(); // run the action only if this link has one
   };
 
   return (
@@ -43,7 +73,7 @@ const Footer = () => {
                   <li key={i}>
                     <a
                       href={link.url}
-                      onClick={(e) => handleLinkClick(e, link.url)}
+                      onClick={(e) => handleLinkClick(e, link.text)}
                       className="hover:underline transition"
                     >
                       {link.text}

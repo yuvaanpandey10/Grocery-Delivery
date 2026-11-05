@@ -1,7 +1,8 @@
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { dummyProducts } from "../assets/assets";
+// CHANGED: dummyOrders is now also imported (used to fill the admin Orders page)
+import { dummyProducts, dummyOrders } from "../assets/assets";
 
 const AppContext = createContext();
 
@@ -16,12 +17,13 @@ export const AppContextProvider = ({ children }) => {
   // The text typed in the search box (shared by Navbar and AllProducts)
   const [searchQuery, setSearchQuery] = useState("");
 
-  // NEW: all addresses the user added (list of address objects)
+  // All addresses the user added (list of address objects)
   const [addresses, setAddresses] = useState([]);
-  // NEW: the address chosen for delivery (one address object, or null)
+  // The address chosen for delivery (one address object, or null)
   const [selectedAddress, setSelectedAddress] = useState(null);
-  // NEW: all placed orders (newest first). Your My Orders page can read this later.
-  const [orders, setOrders] = useState([]);
+  // CHANGED: orders now start with dummyOrders (you approved this)
+  // so the admin Orders page is not empty. Newest first.
+  const [orders, setOrders] = useState(dummyOrders);
 
   // Fetch All Products
   const fetchProducts = async () => {
@@ -63,8 +65,7 @@ export const AppContextProvider = ({ children }) => {
     toast.success("Removed from Cart");
   };
 
-  // NEW: Add a new address, then select it for delivery.
-  // Date.now() gives a simple unique id (no backend yet).
+  // Add a new address, then select it for delivery.
   const addAddress = (address) => {
     const newAddress = { ...address, _id: Date.now().toString() };
     setAddresses((prev) => [...prev, newAddress]);
@@ -72,8 +73,7 @@ export const AppContextProvider = ({ children }) => {
     toast.success("Address added");
   };
 
-  // NEW: Place an order: save it, then empty the cart.
-  // The order has the same shape as your dummyOrders in assets.js.
+  // Place an order: save it, then empty the cart.
   const placeOrder = ({ items, amount, address, paymentType }) => {
     const newOrder = {
       _id: Date.now().toString(),
@@ -91,6 +91,55 @@ export const AppContextProvider = ({ children }) => {
     setOrders((prev) => [newOrder, ...prev]);
     setCartItems({});
     toast.success("Order placed successfully");
+  };
+
+  // ============================================================
+  // NEW: ADMIN FUNCTIONS (used only by the /seller pages)
+  // ============================================================
+
+  // Add a product. "data" = { name, category, price, offerPrice, image[], description[] }
+  // It is added at the top of the list and is in stock by default.
+  const addProduct = (data) => {
+    const now = new Date().toISOString();
+    const newProduct = {
+      ...data,
+      _id: Date.now().toString(), // simple unique id (no backend yet)
+      inStock: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setProducts((prev) => [newProduct, ...prev]);
+    toast.success("Product added");
+  };
+
+  // Edit a product. "changes" = only the fields that changed (also used for the stock toggle)
+  const updateProduct = (id, changes, message = "Product updated") => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p._id === id
+          ? { ...p, ...changes, updatedAt: new Date().toISOString() }
+          : p,
+      ),
+    );
+    toast.success(message);
+  };
+
+  // Delete a product from the shop.
+  const deleteProduct = (id) => {
+    setProducts((prev) => prev.filter((p) => p._id !== id));
+    toast.success("Product deleted");
+  };
+
+  // Change the status of one order (used by the status dropdown).
+  const updateOrderStatus = (orderId, status) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === orderId
+          ? { ...o, status, updatedAt: new Date().toISOString() }
+          : o,
+      ),
+    );
+    toast.success("Order status updated");
   };
 
   const value = {
@@ -111,12 +160,16 @@ export const AppContextProvider = ({ children }) => {
     removeFromCart,
     searchQuery,
     setSearchQuery,
-    addresses, // NEW
-    selectedAddress, // NEW
-    setSelectedAddress, // NEW
-    addAddress, // NEW
-    orders, // NEW
-    placeOrder, // NEW
+    addresses,
+    selectedAddress,
+    setSelectedAddress,
+    addAddress,
+    orders,
+    placeOrder,
+    addProduct, // NEW
+    updateProduct, // NEW
+    deleteProduct, // NEW
+    updateOrderStatus, // NEW
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

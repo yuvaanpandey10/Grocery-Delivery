@@ -186,6 +186,12 @@ const Navbar = () => {
               Contact
             </NavLink>
           </li>
+          {/* NEW: Admin link (desktop). Opens the admin login / dashboard */}
+          <li>
+            <NavLink to="/seller" className={desktopLink}>
+              Admin
+            </NavLink>
+          </li>
         </ul>
 
         {/* ---------- BLOCK 3: ACTIONS (right side) ---------- */}
@@ -380,6 +386,17 @@ const Navbar = () => {
                 className={mobileLink}
               >
                 Contact
+              </NavLink>
+            </li>
+
+            {/* NEW: Admin link (phone menu) */}
+            <li>
+              <NavLink
+                to="/seller"
+                onClick={() => setOpen(false)}
+                className={mobileLink}
+              >
+                Admin
               </NavLink>
             </li>
 

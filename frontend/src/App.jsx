@@ -12,8 +12,13 @@ import ProductDetails from "./pages/ProductDetails.jsx";
 import Cart from "./pages/Cart.jsx";
 // The page with the form to add a delivery address
 import AddAddress from "./pages/AddAddress.jsx";
-// NEW: the page that lists the user's orders
+// The page that lists the user's orders
 import MyOrders from "./pages/MyOrders.jsx";
+// NEW: admin (seller) pages
+import SellerLayout from "./pages/seller/SellerLayout.jsx";
+import AddProduct from "./pages/seller/AddProduct.jsx";
+import ProductList from "./pages/seller/ProductList.jsx";
+import SellerOrders from "./pages/seller/SellerOrders.jsx";
 import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import { useAppContext } from "./context/AppContext";
@@ -45,8 +50,24 @@ const App = () => {
           <Route path="/cart" element={<Cart />} />
           {/* "Add address" in the cart goes here */}
           <Route path="/add-address" element={<AddAddress />} />
-          {/* NEW: Navbar profile menu "My Orders" goes here */}
+          {/* Navbar profile menu "My Orders" goes here */}
           <Route path="/my-orders" element={<MyOrders />} />
+
+          {/* NEW: ADMIN AREA. SellerLayout shows the login form or the dashboard.
+              The pages below appear inside it (in its <Outlet />). */}
+          <Route path="/seller" element={<SellerLayout />}>
+            {/* /seller = Add Product (key keeps add and edit forms separate) */}
+            <Route index element={<AddProduct key="add" />} />
+            {/* /seller/edit-product/:id = same form, filled with the product */}
+            <Route
+              path="edit-product/:id"
+              element={<AddProduct key="edit" />}
+            />
+            {/* /seller/product-list */}
+            <Route path="product-list" element={<ProductList />} />
+            {/* /seller/orders */}
+            <Route path="orders" element={<SellerOrders />} />
+          </Route>
         </Routes>
       </div>
 

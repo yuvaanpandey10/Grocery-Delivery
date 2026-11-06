@@ -61,6 +61,7 @@ export const AppContextProvider = ({ children }) => {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [sellerOrders, setSellerOrders] = useState([]);
   const [sellerOrdersLoaded, setSellerOrdersLoaded] = useState(false);
   const cartSaveQueue = useRef(Promise.resolve());
@@ -92,7 +93,13 @@ export const AppContextProvider = ({ children }) => {
     if (!data.success || !Array.isArray(data.orders)) {
       throw new Error(data.message || "Unable to load orders");
     }
-    setOrders(data.orders.map(normalizeOrder));
+    const fetchedOrders = data.orders.map(normalizeOrder);
+    setOrders((current) => {
+      const currentOnly = new Map(current.map((order) => [order._id, order]));
+      fetchedOrders.forEach((order) => currentOnly.delete(order._id));
+      return [...fetchedOrders, ...currentOnly.values()];
+    });
+    setOrdersLoaded(true);
   }, []);
 
   const fetchAddresses = useCallback(async () => {
@@ -292,6 +299,7 @@ export const AppContextProvider = ({ children }) => {
       address,
     });
     setOrders((current) => [savedOrder, ...current]);
+    setOrdersLoaded(true);
     setCartItems({});
     toast.success("Order placed successfully");
     return savedOrder;
@@ -384,6 +392,9 @@ export const AppContextProvider = ({ children }) => {
     setSelectedAddress,
     addAddress,
     orders,
+    setOrders,
+    ordersLoaded,
+    setOrdersLoaded,
     sellerOrders,
     setSellerOrders,
     sellerOrdersLoaded,

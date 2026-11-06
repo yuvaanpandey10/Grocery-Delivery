@@ -192,7 +192,8 @@ export const requestPasswordReset = async (req, res) => {
 
   try {
     const mail = passwordResetEmailTransport();
-    if (!mail) {
+    const isDevelopment = process.env.NODE_ENV === "development";
+    if (!mail && !isDevelopment) {
       return res.status(503).json({
         success: false,
         message: "Password reset is temporarily unavailable.",
@@ -214,11 +215,17 @@ export const requestPasswordReset = async (req, res) => {
     user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
     await user.save();
 
-    const resetUrl = new URL(
-      `/reset-password/${resetToken}`,
-      mail.frontendUrl,
-    ).toString();
+    const resetPath = `/reset-password/${resetToken}`;
+    if (!mail) {
+      return res.status(200).json({
+        ...response,
+        resetUrl: resetPath,
+        developmentOnly: true,
+      });
+    }
+
     try {
+      const resetUrl = new URL(resetPath, mail.frontendUrl).toString();
       await mail.transporter.sendMail({
         from: mail.from,
         to: user.email,
@@ -227,6 +234,15 @@ export const requestPasswordReset = async (req, res) => {
         html: `<p>Use this link within 30 minutes to reset your password:</p><p><a href="${resetUrl}">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>`,
       });
     } catch (mailError) {
+      console.error("Password reset email delivery failed:", mailError.message);
+      if (isDevelopment) {
+        return res.status(200).json({
+          ...response,
+          resetUrl: resetPath,
+          developmentOnly: true,
+        });
+      }
+
       user.passwordResetTokenHash = null;
       user.passwordResetExpires = null;
       try {
@@ -237,8 +253,10 @@ export const requestPasswordReset = async (req, res) => {
           saveError.message,
         );
       }
-      console.error("Password reset email delivery failed:", mailError.message);
-      return res.status(200).json(response);
+      return res.status(503).json({
+        success: false,
+        message: "Password reset is temporarily unavailable.",
+      });
     }
 
     return res.status(200).json(response);

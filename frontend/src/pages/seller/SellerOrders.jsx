@@ -17,7 +17,8 @@ const orderStatuses = [
 
 const SellerOrders = () => {
   // Shared data and functions from the Context
-  const { sellerOrders, updateOrderStatus } = useAppContext();
+  const { sellerOrders, sellerOrdersLoaded, updateOrderStatus } =
+    useAppContext();
 
   const handleStatusChange = async (orderId, status) => {
     try {
@@ -42,7 +43,10 @@ const SellerOrders = () => {
       </p>
 
       {/* Empty state */}
-      {sellerOrders.length === 0 && (
+      {!sellerOrdersLoaded && (
+        <p className="mt-6 text-gray-600">Loading orders...</p>
+      )}
+      {sellerOrdersLoaded && sellerOrders.length === 0 && (
         <p className="mt-6 text-gray-600">No orders yet.</p>
       )}
 

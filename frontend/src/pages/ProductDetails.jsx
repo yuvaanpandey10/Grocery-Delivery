@@ -11,7 +11,14 @@ const ProductDetails = () => {
   const { id } = useParams();
 
   // FROM CONTEXT: products, cart data, cart functions, navigate
-  const { products, cartItems, addToCart, removeFromCart, navigate } =
+  const {
+    products,
+    productsLoaded,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    navigate,
+  } =
     useAppContext();
 
   // 2) Which thumbnail is selected (its position: 0, 1, 2, 3).
@@ -27,7 +34,7 @@ const ProductDetails = () => {
   if (!product) {
     return (
       <div className="mt-16 mb-16 text-center text-gray-500">
-        Product not found
+        {productsLoaded ? "Product not found" : "Loading product..."}
       </div>
     );
   }

@@ -13,6 +13,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
   withCredentials: true,
+  timeout: 15000,
 });
 
 const AppContext = createContext();
@@ -49,6 +50,8 @@ export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState("");
   const [showUserLogin, setShowUserLogin] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
@@ -58,6 +61,7 @@ export const AppContextProvider = ({ children }) => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [orders, setOrders] = useState([]);
   const [sellerOrders, setSellerOrders] = useState([]);
+  const [sellerOrdersLoaded, setSellerOrdersLoaded] = useState(false);
   const cartSaveQueue = useRef(Promise.resolve());
 
   const fetchProducts = useCallback(async () => {
@@ -65,7 +69,20 @@ export const AppContextProvider = ({ children }) => {
     if (!data.success || !Array.isArray(data.products)) {
       throw new Error(data.message || "Unable to load products");
     }
-    setProducts(data.products.map(normalizeProduct));
+    const fetchedProducts = data.products.map(normalizeProduct);
+    setProducts(fetchedProducts);
+    setCartItems((current) => {
+      let migrated = false;
+      const next = { ...current };
+      fetchedProducts.forEach((product) => {
+        if (product.legacyId && next[product.legacyId]) {
+          next[product._id] = (next[product._id] || 0) + next[product.legacyId];
+          delete next[product.legacyId];
+          migrated = true;
+        }
+      });
+      return migrated ? next : current;
+    });
     setProductsLoaded(true);
   }, []);
 
@@ -93,9 +110,89 @@ export const AppContextProvider = ({ children }) => {
       throw new Error(data.message || "Unable to load seller orders");
     }
     setSellerOrders(data.orders.map(normalizeOrder));
+    setSellerOrdersLoaded(true);
   }, []);
 
   useEffect(() => {
+    let active = true;
+
+    const restoreSessions = async () => {
+      const [userResult, sellerResult] = await Promise.allSettled([
+        api.get("/api/user/is-auth"),
+        api.get("/api/seller/is-auth"),
+      ]);
+      if (!active) return;
+
+      const isUserAuthenticated =
+        userResult.status === "fulfilled" && userResult.value.data.success;
+      const isSellerAuthenticated =
+        sellerResult.status === "fulfilled" && sellerResult.value.data.success;
+
+      if (isUserAuthenticated) {
+        const restoredUser = userResult.value.data.user;
+        setUser(restoredUser);
+        setCartItems(restoredUser.cartItems || {});
+      } else if (
+        userResult.status === "rejected" &&
+        ![401, 404].includes(userResult.reason.response?.status)
+      ) {
+        console.error("Unable to restore user session:", userResult.reason);
+        setAuthError(
+          userResult.reason.response?.data?.message ||
+            "Unable to connect to the authentication service.",
+        );
+      }
+
+      if (sellerResult.status === "fulfilled") {
+        setIsSeller(isSellerAuthenticated);
+      } else if (
+        sellerResult.reason.response?.status !== 401 &&
+        !(
+          userResult.status === "rejected" &&
+          ![401, 404].includes(userResult.reason.response?.status)
+        )
+      ) {
+        console.error("Unable to restore seller session:", sellerResult.reason);
+        setAuthError(
+          sellerResult.reason.response?.data?.message ||
+            "Unable to connect to the authentication service.",
+        );
+      }
+
+      const initialDataRequests = [];
+      if (isUserAuthenticated) {
+        initialDataRequests.push(fetchAddresses(), fetchOrders());
+      }
+      const initialDataResults = await Promise.allSettled(initialDataRequests);
+      if (!active) return;
+      initialDataResults.forEach((result) => {
+        if (result.status === "rejected") {
+          console.error("Unable to load initial application data:", result.reason);
+          toast.error(
+            result.reason.response?.data?.message ||
+              "Some account data could not be loaded",
+          );
+        }
+      });
+
+      setIsAuthLoading(false);
+    };
+
+    restoreSessions().catch((error) => {
+      if (!active) return;
+      console.error("Unable to restore application session:", error);
+      setAuthError("Unable to connect to the authentication service.");
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchAddresses, fetchOrders, fetchProducts]);
+
+  const userId = user?._id;
+  useEffect(() => {
+    if (!userId && !isSeller) return;
     Promise.resolve()
       .then(fetchProducts)
       .catch((error) => {
@@ -103,38 +200,7 @@ export const AppContextProvider = ({ children }) => {
         setProductsLoaded(true);
         toast.error(error.response?.data?.message || "Unable to load products");
       });
-
-    api
-      .get("/api/user/is-auth")
-      .then(({ data }) => {
-        if (!data.success || !data.user) {
-          throw new Error(data.message || "Unable to verify your session");
-        }
-        setUser(data.user);
-        setCartItems(data.user.cartItems || {});
-        return Promise.all([fetchAddresses(), fetchOrders()]);
-      })
-      .catch((error) => {
-        if (error.response?.status !== 401) {
-          console.error("Unable to restore user session:", error);
-          toast.error(
-            error.response?.data?.message || "Unable to restore your session",
-          );
-        }
-      });
-
-    api
-      .get("/api/seller/is-auth")
-      .then(({ data }) => setIsSeller(Boolean(data.success)))
-      .catch((error) => {
-        if (error.response?.status !== 401) {
-          console.error("Unable to restore seller session:", error);
-          toast.error(
-            error.response?.data?.message || "Unable to verify seller session",
-          );
-        }
-      });
-  }, [fetchAddresses, fetchOrders, fetchProducts]);
+  }, [fetchProducts, isSeller, userId]);
 
   useEffect(() => {
     if (!isSeller) return;
@@ -142,19 +208,20 @@ export const AppContextProvider = ({ children }) => {
       .then(fetchSellerOrders)
       .catch((error) => {
         console.error("Unable to load seller orders:", error);
+        setSellerOrdersLoaded(true);
         toast.error(
           error.response?.data?.message || "Unable to load seller orders",
         );
       });
   }, [fetchSellerOrders, isSeller]);
 
-  const userId = user?._id;
   useEffect(() => {
     if (!userId) return;
     const cartSnapshot = { ...cartItems };
     cartSaveQueue.current = cartSaveQueue.current.then(async () => {
         try {
           const { data } = await api.post("/api/cart/update", {
+            userId,
             cartItems: cartSnapshot,
           });
           if (!data.success) {
@@ -298,6 +365,8 @@ export const AppContextProvider = ({ children }) => {
     setUser,
     isSeller,
     setIsSeller,
+    isAuthLoading,
+    authError,
     showUserLogin,
     setShowUserLogin,
     products,
@@ -319,6 +388,8 @@ export const AppContextProvider = ({ children }) => {
     orders,
     sellerOrders,
     setSellerOrders,
+    sellerOrdersLoaded,
+    setSellerOrdersLoaded,
     fetchOrders,
     fetchAddresses,
     fetchSellerOrders,

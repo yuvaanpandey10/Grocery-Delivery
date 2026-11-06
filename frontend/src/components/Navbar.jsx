@@ -83,6 +83,8 @@ const Navbar = () => {
   const {
     user,
     setUser,
+    setProducts,
+    setProductsLoaded,
     setAddresses,
     setOrders,
     setSelectedAddress,
@@ -121,6 +123,8 @@ const Navbar = () => {
       setProfileOpen(false);
       setOpen(false);
       setUser(null);
+      setProducts([]);
+      setProductsLoaded(false);
       setAddresses([]);
       setOrders([]);
       setSelectedAddress(null);

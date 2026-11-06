@@ -13,6 +13,7 @@ const AllProducts = () => {
   // navigate       = NEW: used to open the product details page
   const {
     products,
+    productsLoaded,
     cartItems,
     addToCart,
     removeFromCart,
@@ -48,7 +49,11 @@ const AllProducts = () => {
         </h1>
 
         {/* If nothing matches, show a simple message instead of the grid */}
-        {filteredProducts.length === 0 ? (
+        {!productsLoaded ? (
+          <p className="mt-10 text-center text-base md:text-lg text-gray-500">
+            Loading products...
+          </p>
+        ) : filteredProducts.length === 0 ? (
           <p className="mt-10 text-center text-base md:text-lg text-gray-500">
             No products found for "{searchQuery.trim()}"
           </p>

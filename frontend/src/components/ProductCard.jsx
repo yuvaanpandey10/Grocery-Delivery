@@ -10,7 +10,7 @@ const ProductCard = () => {
   // addToCart      = adds 1 to a product's count
   // removeFromCart = removes 1 from a product's count (deletes it at 0)
   // navigate       = NEW: used to open the product details page
-  const { products, cartItems, addToCart, removeFromCart, navigate } =
+  const { products, productsLoaded, cartItems, addToCart, removeFromCart, navigate } =
     useAppContext();
 
   // NEW: open the product page, e.g. /products/vegetables/gd46g23h
@@ -25,6 +25,10 @@ const ProductCard = () => {
       <h2 className="text-2xl md:text-3xl font-medium text-gray-800">
         Best Sellers
       </h2>
+
+      {!productsLoaded && (
+        <p className="mt-6 text-sm text-gray-500">Loading products...</p>
+      )}
 
       {/* GRID: 2 cards per row on phones, 3 on sm, 4 on lg, 5 on xl */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">

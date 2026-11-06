@@ -13,7 +13,14 @@ const CategoryProducts = () => {
 
   // FROM CONTEXT: all products, cart data, cart functions
   // NEW: navigate is added, to open the product details page
-  const { products, cartItems, addToCart, removeFromCart, navigate } =
+  const {
+    products,
+    productsLoaded,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    navigate,
+  } =
     useAppContext();
 
   // NEW: open the product page, e.g. /products/vegetables/gd46g23h
@@ -63,6 +70,11 @@ const CategoryProducts = () => {
         </h1>
 
         {/* GRID: 2 cards per row on phones, 3 on sm, 4 on lg, 5 on xl */}
+        {!productsLoaded ? (
+          <p className="mt-6 text-gray-500">Loading products...</p>
+        ) : categoryProducts.length === 0 ? (
+          <p className="mt-6 text-gray-500">No products in this category yet.</p>
+        ) : (
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
           {/* MAP METHOD: one card for each product of this category */}
           {categoryProducts.map((product) => (
@@ -158,6 +170,7 @@ const CategoryProducts = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

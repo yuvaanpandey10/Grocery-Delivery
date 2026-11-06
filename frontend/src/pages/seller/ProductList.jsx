@@ -3,7 +3,7 @@ import { useAppContext } from "../../context/AppContext";
 
 const ProductList = () => {
   // Shared data and functions from the Context
-  const { products, updateProductStock, deleteProduct, navigate } =
+  const { products, productsLoaded, updateProductStock, deleteProduct, navigate } =
     useAppContext();
 
   // Ask before deleting (a delete cannot be undone)
@@ -43,7 +43,11 @@ const ProductList = () => {
       </p>
 
       {/* Empty state */}
-      {products.length === 0 && (
+      {!productsLoaded && (
+        <p className="mt-6 text-gray-600">Loading products...</p>
+      )}
+
+      {productsLoaded && products.length === 0 && (
         <p className="mt-6 text-gray-600">
           No products yet. Add one from the Add Product page.
         </p>

@@ -1,7 +1,4 @@
 import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
-
-app.use(cookieParser());
 
 const authSeller = (req, res, next) => {
   const { sellerToken } = req.cookies;

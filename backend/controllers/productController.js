@@ -2,20 +2,30 @@ import { v2 as cloudinary } from "cloudinary";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 
+const uploadImage = (image) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: "image" },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else if (!result?.secure_url) {
+          reject(new Error("Image upload did not return a URL"));
+        } else {
+          resolve(result.secure_url);
+        }
+      },
+    );
+    stream.end(image.buffer);
+  });
+
 // Add Product : /api/product/add
 export const addProduct = async (req, res) => {
   try {
     const productData = JSON.parse(req.body.productData);
     const images = req.files || [];
 
-    const uploadedImages = await Promise.all(
-      images.map(async (item) => {
-        const result = await cloudinary.uploader.upload(item.path, {
-          resource_type: "image",
-        });
-        return result.secure_url;
-      }),
-    );
+    const uploadedImages = await Promise.all(images.map(uploadImage));
 
     const product = await Product.create({
       ...productData,
@@ -41,14 +51,7 @@ export const updateProduct = async (req, res) => {
         .json({ success: false, message: "Product not found" });
     }
 
-    const uploadedImages = await Promise.all(
-      (req.files || []).map(async (item) => {
-        const result = await cloudinary.uploader.upload(item.path, {
-          resource_type: "image",
-        });
-        return result.secure_url;
-      }),
-    );
+    const uploadedImages = await Promise.all((req.files || []).map(uploadImage));
     const { name, category, description, price, offerPrice } = productData;
     Object.assign(product, { name, category, description, price, offerPrice });
     if (Array.isArray(productData.image) || uploadedImages.length > 0) {

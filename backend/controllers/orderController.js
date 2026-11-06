@@ -7,10 +7,40 @@ export const placeOrderCOD = async (req, res) => {
   try {
     const { items, address } = req.body;
 
-    if (!address || !Array.isArray(items) || items.length === 0) {
+    if (
+      !address ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      items.length > 100
+    ) {
       return res
         .status(400)
-        .json({ success: false, message: "Address and items are required" });
+        .json({ success: false, message: "Enter between 1 and 100 order items" });
+    }
+
+    if (
+      typeof address !== "string" ||
+      !/^[a-f\d]{24}$/i.test(address) ||
+      items.some(
+        (item) =>
+          !item ||
+          typeof item.product !== "string" ||
+          !/^[a-f\d]{24}$/i.test(item.product) ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity < 1 ||
+          item.quantity > 99,
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid address or order item" });
+    }
+
+    const productIds = items.map((item) => item?.product);
+    if (new Set(productIds).size !== productIds.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Each product may only appear once" });
     }
 
     const savedAddress = await Address.findOne({
@@ -25,11 +55,6 @@ export const placeOrderCOD = async (req, res) => {
 
     let subtotal = 0;
     for (const item of items) {
-      if (!item.product || !Number.isInteger(item.quantity) || item.quantity < 1) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid order item" });
-      }
       const product = await Product.findById(item.product);
       if (!product) {
         return res

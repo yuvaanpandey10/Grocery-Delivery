@@ -13,11 +13,11 @@ import {
 
 const productRouter = express.Router();
 
-productRouter.post("/add", authSeller, upload.array("images"), addProduct);
+productRouter.post("/add", authSeller, upload.array("images", 5), addProduct);
 productRouter.get("/list", authCatalog, getProducts);
 productRouter.get("/:id", authCatalog, productById);
 productRouter.post("/stock", authSeller, changeStock);
-productRouter.put("/:id", authSeller, upload.array("images"), updateProduct);
+productRouter.put("/:id", authSeller, upload.array("images", 5), updateProduct);
 productRouter.delete("/:id", authSeller, deleteProduct);
 
 export default productRouter;

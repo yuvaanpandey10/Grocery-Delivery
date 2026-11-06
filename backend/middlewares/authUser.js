@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
+import User from "../models/user.js";
 
-const authUser = (req, res, next) => {
-  const { token } = req.cookies; // Ensure you are using 'cookie-parser' in your app
+const authUser = async (req, res, next) => {
+  const token = req.cookies?.token;
 
   if (!token) {
     return res
@@ -12,20 +13,34 @@ const authUser = (req, res, next) => {
   try {
     const tokenDecoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (tokenDecoded && tokenDecoded.id) {
-      // Best Practice: Attach to req.userId or req.user instead of req.body
-      req.userId = tokenDecoded.id;
-      // OR: req.user = tokenDecoded; (if you want to store the whole payload)
-    } else {
+    if (!tokenDecoded?.id) {
       return res
         .status(401)
         .json({ success: false, message: "Not Authorized" });
     }
 
+    const user = await User.findById(tokenDecoded.id).select("tokenVersion");
+    if (!user || (tokenDecoded.ver ?? 0) !== user.tokenVersion) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Session expired. Please sign in again." });
+    }
+
+    req.userId = user._id.toString();
     next();
-  } catch (err) {
-    // FIX: Changed 'error' to 'err' to match the catch parameter
-    return res.status(401).json({ success: false, message: err.message });
+  } catch (error) {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Session expired. Please sign in again." });
+    }
+    console.error("User authentication failed:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Unable to verify your session." });
   }
 };
 

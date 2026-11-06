@@ -6,6 +6,7 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    legacyId: { type: String, unique: true, sparse: true },
     description: {
       type: Array,
       required: true,
@@ -35,6 +36,8 @@ const ProductSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+ProductSchema.index({ category: 1, createdAt: -1 });
 
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);

@@ -42,12 +42,14 @@ export const getProducts = async (req, res) => {
 };
 
 // Get single Product : /api/product/:id
-export const getProduct = async (req, res) => {
+export const productById = async (req, res) => {
   try {
-    const {id} = req.body;
+    const { id } = req.params;
     const product = await Product.findById(id);
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
     res.status(200).json({ success: true, product });
   } catch (error) {
@@ -57,18 +59,24 @@ export const getProduct = async (req, res) => {
 };
 
 // Change Product inStock : /api/product/stock
-export const changeProductStock = async (req, res) => {
+export const changeStock = async (req, res) => {
   try {
     const { id, inStock } = req.body;
     const product = await Product.findByIdAndUpdate(
       id,
       { inStock },
-      { new: true }
+      { new: true },
     );
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
-    res.status(200).json({ success: true, message: "Product stock updated successfully", product });
+    res.status(200).json({
+      success: true,
+      message: "Product stock updated successfully",
+      product,
+    });
   } catch (error) {
     console.error("Error updating product stock:", error);
     res.status(500).json({ success: false, message: error.message });

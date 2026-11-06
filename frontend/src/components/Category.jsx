@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { categories } from "../assets/assets";
 // Import the context hook so we can use `navigate` from AppContext.jsx
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const Category = () => {
   const shouldReduceMotion = useReducedMotion();
@@ -69,7 +70,7 @@ const Category = () => {
               // 2. scroll the page to the top after navigating
               onClick={() => {
                 navigate(`/products/${category.path.toLowerCase()}`);
-                window.scrollTo(0, 0);
+                scrollToTop();
               }}
             >
               {/* CATEGORY IMAGE

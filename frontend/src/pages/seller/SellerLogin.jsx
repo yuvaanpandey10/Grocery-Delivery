@@ -30,6 +30,7 @@ const SellerLogin = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <form
         onSubmit={handleSubmit}
+        autoComplete="off"
         className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-xl sm:p-10"
       >
         <h2 className="text-center text-2xl font-semibold sm:text-3xl">
@@ -42,6 +43,7 @@ const SellerLogin = () => {
           <input
             id="admin-email"
             type="email"
+            autoComplete="off"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -56,6 +58,7 @@ const SellerLogin = () => {
           <input
             id="admin-password"
             type="password"
+            autoComplete="new-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

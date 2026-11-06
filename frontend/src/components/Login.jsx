@@ -16,6 +16,7 @@ const Login = ({ standalone = false }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordEditable, setIsPasswordEditable] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,6 +64,7 @@ const Login = ({ standalone = false }) => {
     <form
       onClick={(e) => e.stopPropagation()}
       onSubmit={handleSubmit}
+      autoComplete="off"
       className="w-full max-w-md rounded-lg bg-white p-6 text-gray-600 shadow-xl sm:p-10"
     >
       <h2 className="text-center text-2xl font-semibold sm:text-3xl">
@@ -83,7 +85,7 @@ const Login = ({ standalone = false }) => {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="example@email.com"
+            placeholder="Your name"
             className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
           />
         </div>
@@ -96,12 +98,12 @@ const Login = ({ standalone = false }) => {
         <input
           id={standalone ? "page-email" : "email"}
           type="email"
-          autoComplete="email"
+          autoComplete="off"
           maxLength={254}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="ExamplePassword123!"
+          placeholder="example@email.com"
           className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
         />
       </div>
@@ -113,13 +115,15 @@ const Login = ({ standalone = false }) => {
         <input
           id={standalone ? "page-password" : "password"}
           type="password"
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          autoComplete="new-password"
+          readOnly={!isPasswordEditable}
+          onFocus={() => setIsPasswordEditable(true)}
           minLength={8}
           maxLength={128}
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="type here"
+          placeholder="ExamplePassword123!"
           className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
         />
       </div>
@@ -142,7 +146,11 @@ const Login = ({ standalone = false }) => {
           : "Already have an account? "}
         <button
           type="button"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
+          onClick={() => {
+            setMode(mode === "login" ? "register" : "login");
+            setPassword("");
+            setIsPasswordEditable(false);
+          }}
           className="cursor-pointer text-primary"
         >
           click here

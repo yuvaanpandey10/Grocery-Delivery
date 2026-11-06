@@ -64,7 +64,6 @@ const Login = () => {
       className="w-full max-w-md rounded-lg bg-white p-6 text-gray-600 shadow-xl sm:p-10"
     >
       <h2 className="text-center text-2xl font-semibold sm:text-3xl">
-        <span className="text-primary">User</span>{" "}
         {mode === "login" ? "Login" : "Sign Up"}
       </h2>
 

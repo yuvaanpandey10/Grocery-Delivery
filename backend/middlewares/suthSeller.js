@@ -9,7 +9,7 @@ const authSeller = (req, res, next) => {
   try {
     const decoded = jwt.verify(sellerToken, process.env.JWT_SECRET);
 
-    if (tokenDecoded.email === process.env.ADMIN_EMAIL) {
+    if (decoded.email === process.env.ADMIN_EMAIL) {
       next();
     } else {
       return res.status(403).json({ message: "Forbidden" });

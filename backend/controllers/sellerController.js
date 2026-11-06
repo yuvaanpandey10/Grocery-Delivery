@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+
 // Login Seller : /api/seller/login
 export const sellerLogin = async (req, res) => {
   try {
@@ -14,7 +16,7 @@ export const sellerLogin = async (req, res) => {
       res.cookie("sellerToken", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         maxAge: 60 * 60 * 1000, // 1 hour
       });
 
@@ -47,7 +49,7 @@ export const sellerLogout = async (req, res) => {
     res.clearCookie("sellerToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     });
 
     return res

@@ -2,6 +2,7 @@
 // IMPORTS
 // ============================================================
 import React from "react";
+import toast from "react-hot-toast";
 // useLocation tells us which page we are on (to know if we must go to /products)
 import { NavLink, useLocation } from "react-router-dom";
 // Your images (logo, cart icon, profile icon, ...)
@@ -82,6 +83,10 @@ const Navbar = () => {
   const {
     user,
     setUser,
+    setAddresses,
+    setOrders,
+    setSelectedAddress,
+    axios,
     setShowUserLogin,
     navigate,
     searchQuery,
@@ -109,11 +114,23 @@ const Navbar = () => {
   };
 
   // ---------- LOGOUT ----------
-  const logout = () => {
-    setProfileOpen(false);
-    setOpen(false);
-    setUser(null);
-    navigate("/");
+  const logout = async () => {
+    try {
+      const { data } = await axios.get("/api/user/logout");
+      if (!data.success) throw new Error(data.message || "Unable to log out");
+      setProfileOpen(false);
+      setOpen(false);
+      setUser(null);
+      setAddresses([]);
+      setOrders([]);
+      setSelectedAddress(null);
+      navigate("/");
+    } catch (error) {
+      console.error("Unable to log out:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Unable to log out",
+      );
+    }
   };
 
   // ---------- EFFECT: global event listeners ----------

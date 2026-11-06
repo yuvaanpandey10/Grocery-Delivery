@@ -5,7 +5,14 @@ import { useAppContext } from "../context/AppContext";
 
 const Login = () => {
   // From Context: close the popup, save the user
-  const { setShowUserLogin, setUser } = useAppContext();
+  const {
+    axios,
+    fetchAddresses,
+    fetchOrders,
+    setShowUserLogin,
+    setUser,
+    setCartItems,
+  } = useAppContext();
 
   // Local state only for this form (these do not exist in the context)
   const [mode, setMode] = useState("login"); // "login" or "register"
@@ -14,13 +21,25 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   // Runs when the form is submitted (button click or Enter key)
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // stop the page from reloading
-
-    // No backend yet: we save the user in the Context
-    setUser({ name: name || email.split("@")[0], email });
-    setShowUserLogin(false); // close the popup
-    toast.success(mode === "login" ? "Logged in" : "Account created");
+    try {
+      const { data } = await axios.post(
+        mode === "login" ? "/api/user/login" : "/api/user/register",
+        mode === "login" ? { email, password } : { name, email, password },
+      );
+      if (!data.success || !data.user) {
+        throw new Error(data.message || "Unable to sign in");
+      }
+      setUser(data.user);
+      setCartItems(data.user.cartItems || {});
+      await Promise.all([fetchAddresses(), fetchOrders()]);
+      setShowUserLogin(false);
+      toast.success(mode === "login" ? "Logged in" : "Account created");
+    } catch (error) {
+      console.error("User authentication failed:", error);
+      toast.error(error.response?.data?.message || error.message || "Unable to sign in");
+    }
   };
 
   return (
@@ -97,12 +116,13 @@ const Login = () => {
           {mode === "login"
             ? "Create an account? "
             : "Already have an account? "}
-          <span
+          <button
+            type="button"
             onClick={() => setMode(mode === "login" ? "register" : "login")}
             className="cursor-pointer text-primary"
           >
             click here
-          </span>
+          </button>
         </p>
 
         {/* Submit button */}

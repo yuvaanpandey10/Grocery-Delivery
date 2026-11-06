@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import { assets } from "../../assets/assets";
 import { useAppContext } from "../../context/AppContext";
 
@@ -16,23 +17,38 @@ const orderStatuses = [
 
 const SellerOrders = () => {
   // Shared data and functions from the Context
-  const { orders, updateOrderStatus } = useAppContext();
+  const { sellerOrders, updateOrderStatus } = useAppContext();
+
+  const handleStatusChange = async (orderId, status) => {
+    try {
+      await updateOrderStatus(orderId, status);
+    } catch (error) {
+      console.error("Unable to update order status:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to update order status",
+      );
+    }
+  };
 
   return (
     <div>
       <h1 className="text-xl font-semibold text-gray-900 md:text-2xl">
         Orders
       </h1>
-      <p className="mt-1 text-sm text-gray-500">{orders.length} orders</p>
+      <p className="mt-1 text-sm text-gray-500">
+        {sellerOrders.length} orders
+      </p>
 
       {/* Empty state */}
-      {orders.length === 0 && (
+      {sellerOrders.length === 0 && (
         <p className="mt-6 text-gray-600">No orders yet.</p>
       )}
 
       {/* ---------- ONE CARD PER ORDER (.map) ---------- */}
       <ul className="mt-6 space-y-4">
-        {orders.map((order) => (
+        {sellerOrders.map((order) => (
           <li
             key={order._id}
             className="rounded-lg border border-gray-200 bg-white p-4 md:p-5"
@@ -43,7 +59,7 @@ const SellerOrders = () => {
                 <p>
                   Order{" "}
                   <span className="font-medium text-gray-900">
-                    #{order._id.slice(-8)}
+                    #{String(order._id).slice(-8)}
                   </span>
                 </p>
                 <p>{new Date(order.createdAt).toLocaleString()}</p>
@@ -51,8 +67,10 @@ const SellerOrders = () => {
 
               {/* Status dropdown: changes the order in the Context */}
               <select
-                value={order.status}
-                onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                value={order.status || "Order Placed"}
+                onChange={(e) =>
+                  handleStatusChange(order._id, e.target.value)
+                }
                 aria-label="Order status"
                 className="w-full cursor-pointer rounded border border-gray-300 px-3 py-2 text-sm outline-primary sm:w-52"
               >
@@ -71,13 +89,13 @@ const SellerOrders = () => {
                 {order.items.map((item, index) => (
                   <li key={index} className="flex items-center gap-3">
                     <img
-                      src={item.product.image[0]}
-                      alt={item.product.name}
+                      src={item.product?.image?.[0] || ""}
+                      alt={item.product?.name || "Product"}
                       className="h-12 w-12 shrink-0 rounded border border-gray-200 object-contain"
                     />
                     <p className="min-w-0 text-sm">
                       <span className="font-medium text-gray-900">
-                        {item.product.name}
+                        {item.product?.name || "Product no longer available"}
                       </span>{" "}
                       <span className="text-primary-dull">
                         x {item.quantity}

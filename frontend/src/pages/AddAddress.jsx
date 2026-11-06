@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 // assets = add_address_iamge (the picture next to the form; your assets.js spells it "iamge")
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
@@ -42,10 +43,11 @@ const AddAddress = () => {
   // FROM CONTEXT:
   // addAddress = saves the address in the context and selects it for delivery
   // navigate   = used to go back to the cart
-  const { addAddress, navigate } = useAppContext();
+  const { addAddress, navigate, user, setShowUserLogin } = useAppContext();
 
   // The values typed in the form
   const [form, setForm] = useState(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Update one field while typing (name = the input's "name")
   const handleChange = (e) => {
@@ -60,14 +62,29 @@ const AddAddress = () => {
   };
 
   // Save the address (the browser already checked the required fields)
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // no page reload
+    if (!user) {
+      toast.error("Please login before adding a delivery address");
+      setShowUserLogin(true);
+      return;
+    }
     // trim() removes spaces at the start/end of every value
     const cleaned = Object.fromEntries(
       Object.entries(form).map(([key, value]) => [key, value.trim()]),
     );
-    addAddress(cleaned); // saves it in the context and selects it
-    goToCart(); // back to the cart, where the new address is shown
+    setIsSubmitting(true);
+    try {
+      await addAddress(cleaned);
+      goToCart();
+    } catch (error) {
+      console.error("Unable to save address:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Unable to save address",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -116,9 +133,10 @@ const AddAddress = () => {
               </button>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="flex-1 cursor-pointer bg-primary py-3 font-medium text-white transition hover:bg-primary-dull"
               >
-                Save Address
+                {isSubmitting ? "Saving..." : "Save Address"}
               </button>
             </div>
           </form>

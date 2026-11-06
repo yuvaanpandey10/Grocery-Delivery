@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { assets, categories } from "../../assets/assets";
@@ -12,20 +12,51 @@ const inputClass =
 //  - /seller                  -> ADD a new product (empty form)
 //  - /seller/edit-product/:id -> EDIT a product (form filled with its data)
 const AddProduct = () => {
-  // :id from the URL (only exists in edit mode)
   const { id } = useParams();
-  // Shared data and functions from the Context
-  const { products, addProduct, updateProduct, navigate } = useAppContext();
+  const context = useAppContext();
+  const editing = context.products.find((product) => product._id === id);
 
+  if (id && !editing) {
+    return (
+      <div className="text-gray-600">
+        <p>
+          {context.productsLoaded
+            ? "This product was not found."
+            : "Loading product..."}
+        </p>
+        {context.productsLoaded && (
+          <button
+            type="button"
+            onClick={() => context.navigate("/seller/product-list")}
+            className="mt-4 cursor-pointer rounded bg-primary px-6 py-2 font-medium text-white hover:bg-primary-dull"
+          >
+            Back to Product List
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <ProductForm
+      key={id || "add"}
+      id={id}
+      editing={editing}
+      addProduct={context.addProduct}
+      updateProduct={context.updateProduct}
+      navigate={context.navigate}
+    />
+  );
+};
+
+const ProductForm = ({ id, editing, addProduct, updateProduct, navigate }) => {
   const isEdit = Boolean(id);
-  // The product being edited (undefined in add mode)
-  const editing = products.find((p) => p._id === id);
 
   // ---------- LOCAL FORM STATE (only used by this form) ----------
   // 4 image slots. Each slot holds an image link (string) or null.
   const [images, setImages] = useState(() => {
     const slots = [null, null, null, null];
-    editing?.image.forEach((src, i) => {
+    editing?.image?.forEach((src, i) => {
       if (i < 4) slots[i] = src;
     });
     return slots;
@@ -33,7 +64,7 @@ const AddProduct = () => {
   const [name, setName] = useState(editing?.name ?? "");
   // The description is typed one point per line, saved as an array
   const [description, setDescription] = useState(
-    editing?.description.join("\n") ?? "",
+    editing?.description?.join("\n") ?? "",
   );
   const [category, setCategory] = useState(
     editing?.category ?? categories[0].path,
@@ -42,42 +73,50 @@ const AddProduct = () => {
   const [offerPrice, setOfferPrice] = useState(
     editing ? String(editing.offerPrice) : "",
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const previewUrls = useRef([]);
 
-  // Edit mode but the product does not exist (deleted or wrong id)
-  if (isEdit && !editing) {
-    return (
-      <div className="text-gray-600">
-        <p>This product was not found.</p>
-        <button
-          type="button"
-          onClick={() => navigate("/seller/product-list")}
-          className="mt-4 cursor-pointer rounded bg-primary px-6 py-2 font-medium text-white hover:bg-primary-dull"
-        >
-          Back to Product List
-        </button>
-      </div>
-    );
-  }
+  useEffect(
+    () => () => previewUrls.current.forEach((url) => URL.revokeObjectURL(url)),
+    [],
+  );
 
   // ---------- IMAGE HANDLERS ----------
   // A picked file becomes a temporary browser link (lost on refresh).
   const handleImage = (index, e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setImages((prev) => prev.map((img, i) => (i === index ? url : img)));
+    const previous = images[index];
+    if (previous && typeof previous !== "string") {
+      URL.revokeObjectURL(previous.preview);
+      previewUrls.current = previewUrls.current.filter(
+        (url) => url !== previous.preview,
+      );
+    }
+    const preview = URL.createObjectURL(file);
+    previewUrls.current.push(preview);
+    setImages((prev) =>
+      prev.map((img, i) => (i === index ? { file, preview } : img)),
+    );
   };
 
   // Empty one image slot
   const removeImage = (index) => {
+    const image = images[index];
+    if (image && typeof image !== "string") {
+      URL.revokeObjectURL(image.preview);
+      previewUrls.current = previewUrls.current.filter(
+        (url) => url !== image.preview,
+      );
+    }
     setImages((prev) => prev.map((img, i) => (i === index ? null : img)));
   };
 
   // ---------- SUBMIT ----------
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // stop the page from reloading
 
-    const pickedImages = images.filter(Boolean); // remove empty slots
+    const pickedImages = images.filter(Boolean);
     const descriptionList = description
       .split("\n")
       .map((line) => line.trim())
@@ -97,28 +136,51 @@ const AddProduct = () => {
       return;
     }
 
-    // The product data in the same shape as dummyProducts
-    const data = {
+    const productData = {
       name: name.trim(),
       category,
       price: Number(price),
       offerPrice: Number(offerPrice),
-      image: pickedImages,
+      image: pickedImages.filter((image) => typeof image === "string"),
       description: descriptionList,
     };
+    const formData = new FormData();
+    formData.append("productData", JSON.stringify(productData));
+    pickedImages.forEach((image) => {
+      if (typeof image !== "string") formData.append("images", image.file);
+    });
 
-    if (isEdit) {
-      updateProduct(id, data); // save the changes
-      navigate("/seller/product-list");
-    } else {
-      addProduct(data); // add a new product
-      // Empty the form for the next product
-      setImages([null, null, null, null]);
-      setName("");
-      setDescription("");
-      setCategory(categories[0].path);
-      setPrice("");
-      setOfferPrice("");
+    setIsSubmitting(true);
+    try {
+      if (isEdit) {
+        await updateProduct(id, formData);
+        navigate("/seller/product-list");
+      } else {
+        await addProduct(formData);
+        pickedImages.forEach((image) => {
+          if (typeof image !== "string") URL.revokeObjectURL(image.preview);
+        });
+        previewUrls.current = previewUrls.current.filter(
+          (url) =>
+            !pickedImages.some(
+              (image) =>
+                typeof image !== "string" && image.preview === url,
+            ),
+        );
+        setImages([null, null, null, null]);
+        setName("");
+        setDescription("");
+        setCategory(categories[0].path);
+        setPrice("");
+        setOfferPrice("");
+      }
+    } catch (error) {
+      console.error("Unable to save product:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Unable to save product",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,7 +206,11 @@ const AddProduct = () => {
                 />
                 {/* Shows the picked image, or the upload placeholder */}
                 <img
-                  src={img || assets.upload_area}
+                  src={
+                    typeof img === "string"
+                      ? img
+                      : img?.preview || assets.upload_area
+                  }
                   alt="Product upload"
                   className="h-24 w-24 rounded border border-gray-300 bg-white object-cover"
                 />
@@ -259,9 +325,14 @@ const AddProduct = () => {
       <div className="flex gap-3">
         <button
           type="submit"
+          disabled={isSubmitting}
           className="cursor-pointer rounded bg-primary px-8 py-2.5 font-medium text-white transition hover:bg-primary-dull"
         >
-          {isEdit ? "Save changes" : "Add product"}
+          {isSubmitting
+            ? "Saving..."
+            : isEdit
+              ? "Save changes"
+              : "Add product"}
         </button>
         {/* Cancel only in edit mode */}
         {isEdit && (

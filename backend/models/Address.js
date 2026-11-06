@@ -36,11 +36,11 @@ const addressSchema = new mongoose.Schema(
       required: true,
     },
     phoneNumber: {
-      type: Number,
+      type: String,
       required: true,
     },
     postalCode: {
-      type: Number,
+      type: String,
       required: true,
     },
   },

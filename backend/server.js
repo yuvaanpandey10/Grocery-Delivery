@@ -18,7 +18,10 @@ await connectDB();
 await connectCloudinary();
 
 // Allow requests from specific origins
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+];
 
 // Middleware configuration
 app.use(express.json());

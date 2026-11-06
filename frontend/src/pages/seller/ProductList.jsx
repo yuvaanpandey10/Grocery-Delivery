@@ -1,13 +1,35 @@
+import toast from "react-hot-toast";
 import { useAppContext } from "../../context/AppContext";
 
 const ProductList = () => {
   // Shared data and functions from the Context
-  const { products, updateProduct, deleteProduct, navigate } = useAppContext();
+  const { products, updateProductStock, deleteProduct, navigate } =
+    useAppContext();
 
   // Ask before deleting (a delete cannot be undone)
-  const handleDelete = (product) => {
+  const handleDelete = async (product) => {
     if (window.confirm(`Delete "${product.name}"?`)) {
-      deleteProduct(product._id);
+      try {
+        await deleteProduct(product._id);
+      } catch (error) {
+        console.error("Unable to delete product:", error);
+        toast.error(
+          error.response?.data?.message || error.message || "Unable to delete product",
+        );
+      }
+    }
+  };
+
+  const handleStockChange = async (product) => {
+    try {
+      await updateProductStock(product._id, !product.inStock);
+    } catch (error) {
+      console.error("Unable to update product stock:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to update product stock",
+      );
     }
   };
 
@@ -38,7 +60,7 @@ const ProductList = () => {
             {/* Image + name + category + prices */}
             <div className="flex min-w-0 flex-1 items-center gap-4">
               <img
-                src={product.image[0]}
+                src={product.image[0] || ""}
                 alt={product.name}
                 className="h-16 w-16 shrink-0 rounded border border-gray-200 object-contain"
               />
@@ -66,13 +88,7 @@ const ProductList = () => {
                   <input
                     type="checkbox"
                     checked={product.inStock}
-                    onChange={() =>
-                      updateProduct(
-                        product._id,
-                        { inStock: !product.inStock },
-                        "Stock updated",
-                      )
-                    }
+                    onChange={() => handleStockChange(product)}
                     className="peer sr-only"
                   />
                   {/* Track */}

@@ -49,15 +49,17 @@ const MyOrders = () => {
                     Phone = stacked, md+ = one row. */}
                 <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between md:text-base md:font-medium text-gray-400">
                   <span className="break-all">OrderId : {order._id}</span>
-                  <span>Payment : {order.paymentType}</span>
-                  <span>Total Amount : ${order.amount.toFixed(2)}</span>
+                  <span>Payment : {order.paymentType || order.paymentMethod}</span>
+                  <span>
+                    Total Amount : ${Number(order.amount || 0).toFixed(2)}
+                  </span>
                 </div>
 
                 {/* MAP METHOD: one row for each product in this order.
                     The line under a row shows on every row except the last one. */}
-                {order.items.map((item, index) => (
+                {(order.items || []).map((item, index) => (
                   <div
-                    key={item.product._id}
+                    key={`${item.product?._id || index}-${index}`}
                     className={`flex flex-col gap-4 py-5 text-gray-500/70 md:flex-row md:items-center md:gap-8 ${
                       index !== order.items.length - 1
                         ? "border-b border-gray-300"
@@ -68,17 +70,17 @@ const MyOrders = () => {
                     <div className="flex flex-1 items-center gap-4">
                       <div className="shrink-0 rounded-lg bg-primary/10 p-3 md:p-4">
                         <img
-                          src={item.product.image[0]}
-                          alt={item.product.name}
+                          src={item.product?.image?.[0] || ""}
+                          alt={item.product?.name || "Product"}
                           className="h-14 w-14 md:h-16 md:w-16 object-contain"
                         />
                       </div>
                       <div className="min-w-0">
                         <h2 className="text-lg md:text-xl font-medium text-gray-800">
-                          {item.product.name}
+                          {item.product?.name || "Product no longer available"}
                         </h2>
                         <p className="text-sm md:text-base">
-                          Category: {item.product.category}
+                          Category: {item.product?.category || "—"}
                         </p>
                       </div>
                     </div>
@@ -86,16 +88,19 @@ const MyOrders = () => {
                     {/* COLUMN 2: quantity, status, date */}
                     <div className="text-sm md:w-52 md:text-base">
                       <p>Quantity: {item.quantity}</p>
-                      <p>Status: {order.status}</p>
+                      <p>Status: {order.status || "Order Placed"}</p>
                       <p>
                         Date:{" "}
-                        {new Date(order.createdAt).toLocaleDateString("en-US")}
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString("en-US")
+                          : "—"}
                       </p>
                     </div>
 
                     {/* COLUMN 3: amount for this product = offerPrice x quantity */}
                     <p className="text-lg font-medium text-primary md:w-32 md:text-right">
-                      Amount: ${item.product.offerPrice * item.quantity}
+                      Amount: $
+                      {Number(item.product?.offerPrice || 0) * item.quantity}
                     </p>
                   </div>
                 ))}

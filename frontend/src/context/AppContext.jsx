@@ -1,147 +1,292 @@
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-// CHANGED: dummyOrders is now also imported (used to fill the admin Orders page)
-import { dummyProducts, dummyOrders } from "../assets/assets";
 import axios from "axios";
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
+  withCredentials: true,
+});
 
 const AppContext = createContext();
+
+const normalizeProduct = (product) => ({
+  ...product,
+  image: Array.isArray(product.image) ? product.image : [],
+  description: Array.isArray(product.description) ? product.description : [],
+});
+
+const normalizeAddress = (address) => ({
+  ...address,
+  phone: address.phone ?? address.phoneNumber ?? "",
+  zipcode: address.zipcode ?? address.postalCode ?? "",
+});
+
+const normalizeOrder = (order) => ({
+  ...order,
+  paymentType: order.paymentType ?? order.paymentMethod,
+  items: (order.items ?? []).map((item) => ({
+    ...item,
+    product:
+      typeof item.product === "object" && item.product
+        ? normalizeProduct(item.product)
+        : item.product,
+  })),
+  address:
+    typeof order.address === "object" && order.address
+      ? normalizeAddress(order.address)
+      : order.address,
+});
 
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
   const [showUserLogin, setShowUserLogin] = useState(false);
-  const [products, setProducts] = useState(dummyProducts);
+  const [products, setProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [cartItems, setCartItems] = useState({});
-
-  // The text typed in the search box (shared by Navbar and AllProducts)
   const [searchQuery, setSearchQuery] = useState("");
-
-  // All addresses the user added (list of address objects)
   const [addresses, setAddresses] = useState([]);
-  // The address chosen for delivery (one address object, or null)
   const [selectedAddress, setSelectedAddress] = useState(null);
-  // CHANGED: orders now start with dummyOrders (you approved this)
-  // so the admin Orders page is not empty. Newest first.
-  const [orders, setOrders] = useState(dummyOrders);
+  const [orders, setOrders] = useState([]);
+  const [sellerOrders, setSellerOrders] = useState([]);
+  const cartSaveQueue = useRef(Promise.resolve());
 
-  // Fetch All Products
-  const fetchProducts = async () => {
-    setProducts(dummyProducts);
-  };
-
-  // Add to Cart
-  const addToCart = (itemId) => {
-    let cartData = structuredClone(cartItems);
-
-    if (cartData[itemId]) {
-      cartData[itemId] += 1;
-    } else {
-      cartData[itemId] = 1;
+  const fetchProducts = useCallback(async () => {
+    const { data } = await api.get("/api/product/list");
+    if (!data.success || !Array.isArray(data.products)) {
+      throw new Error(data.message || "Unable to load products");
     }
+    setProducts(data.products.map(normalizeProduct));
+    setProductsLoaded(true);
+  }, []);
 
-    setCartItems(cartData);
+  const fetchOrders = useCallback(async () => {
+    const { data } = await api.get("/api/order/user");
+    if (!data.success || !Array.isArray(data.orders)) {
+      throw new Error(data.message || "Unable to load orders");
+    }
+    setOrders(data.orders.map(normalizeOrder));
+  }, []);
+
+  const fetchAddresses = useCallback(async () => {
+    const { data } = await api.get("/api/address/get");
+    if (!data.success || !Array.isArray(data.addresses)) {
+      throw new Error(data.message || "Unable to load addresses");
+    }
+    const fetchedAddresses = data.addresses.map(normalizeAddress);
+    setAddresses(fetchedAddresses);
+    setSelectedAddress((current) => current || fetchedAddresses[0] || null);
+  }, []);
+
+  const fetchSellerOrders = useCallback(async () => {
+    const { data } = await api.get("/api/order/seller");
+    if (!data.success || !Array.isArray(data.orders)) {
+      throw new Error(data.message || "Unable to load seller orders");
+    }
+    setSellerOrders(data.orders.map(normalizeOrder));
+  }, []);
+
+  useEffect(() => {
+    Promise.resolve()
+      .then(fetchProducts)
+      .catch((error) => {
+        console.error("Unable to load products:", error);
+        setProductsLoaded(true);
+        toast.error(error.response?.data?.message || "Unable to load products");
+      });
+
+    api
+      .get("/api/user/is-auth")
+      .then(({ data }) => {
+        if (!data.success || !data.user) {
+          throw new Error(data.message || "Unable to verify your session");
+        }
+        setUser(data.user);
+        setCartItems(data.user.cartItems || {});
+        return Promise.all([fetchAddresses(), fetchOrders()]);
+      })
+      .catch((error) => {
+        if (error.response?.status !== 401) {
+          console.error("Unable to restore user session:", error);
+          toast.error(
+            error.response?.data?.message || "Unable to restore your session",
+          );
+        }
+      });
+
+    api
+      .get("/api/seller/is-auth")
+      .then(({ data }) => setIsSeller(Boolean(data.success)))
+      .catch((error) => {
+        if (error.response?.status !== 401) {
+          console.error("Unable to restore seller session:", error);
+          toast.error(
+            error.response?.data?.message || "Unable to verify seller session",
+          );
+        }
+      });
+  }, [fetchAddresses, fetchOrders, fetchProducts]);
+
+  useEffect(() => {
+    if (!isSeller) return;
+    Promise.resolve()
+      .then(fetchSellerOrders)
+      .catch((error) => {
+        console.error("Unable to load seller orders:", error);
+        toast.error(
+          error.response?.data?.message || "Unable to load seller orders",
+        );
+      });
+  }, [fetchSellerOrders, isSeller]);
+
+  const userId = user?._id;
+  useEffect(() => {
+    if (!userId) return;
+    const cartSnapshot = { ...cartItems };
+    cartSaveQueue.current = cartSaveQueue.current.then(async () => {
+        try {
+          const { data } = await api.post("/api/cart/update", {
+            cartItems: cartSnapshot,
+          });
+          if (!data.success) {
+            throw new Error(data.message || "Unable to save your cart");
+          }
+        } catch (error) {
+          console.error("Unable to save cart:", error);
+          toast.error(
+            error.response?.data?.message || error.message || "Unable to save your cart",
+          );
+        }
+      });
+  }, [cartItems, userId]);
+
+  const addToCart = (itemId) => {
+    setCartItems((current) => ({
+      ...current,
+      [itemId]: (current[itemId] || 0) + 1,
+    }));
     toast.success("Item added to cart");
   };
 
-  // Update Cart Item Quantity
   const updateCartItem = (itemId, quantity) => {
-    let cartData = structuredClone(cartItems);
-    cartData[itemId] = quantity;
-    setCartItems(cartData);
+    setCartItems((current) => ({ ...current, [itemId]: quantity }));
     toast.success("Cart updated");
   };
 
-  // Remove Product form cart
   const removeFromCart = (itemId) => {
-    let cartData = structuredClone(cartItems);
-    if (cartData[itemId]) {
-      cartData[itemId] -= 1;
-      if (cartData[itemId] === 0) {
-        delete cartData[itemId];
-      }
-    }
-    setCartItems(cartData);
+    setCartItems((current) => {
+      const next = { ...current };
+      if (next[itemId]) next[itemId] -= 1;
+      if (!next[itemId]) delete next[itemId];
+      return next;
+    });
     toast.success("Removed from Cart");
   };
 
-  // Add a new address, then select it for delivery.
-  const addAddress = (address) => {
-    const newAddress = { ...address, _id: Date.now().toString() };
-    setAddresses((prev) => [...prev, newAddress]);
-    setSelectedAddress(newAddress);
+  const addAddress = async (address) => {
+    const { data } = await api.post("/api/address/add", { address });
+    if (!data.success || !data.address) {
+      throw new Error(data.message || "Unable to save address");
+    }
+    const savedAddress = normalizeAddress(data.address);
+    setAddresses((current) => [...current, savedAddress]);
+    setSelectedAddress(savedAddress);
     toast.success("Address added");
   };
 
-  // Place an order: save it, then empty the cart.
-  const placeOrder = ({ items, amount, address, paymentType }) => {
-    const newOrder = {
-      _id: Date.now().toString(),
-      userId: user?._id ?? null, // I could not check the shape of "user"
-      items,
-      amount,
+  const placeOrder = async ({ items, address }) => {
+    const { data } = await api.post("/api/order/cod", {
+      items: items.map(({ product, quantity }) => ({
+        product: product._id,
+        quantity,
+      })),
+      address: address._id,
+    });
+    if (!data.success || !data.order) {
+      throw new Error(data.message || "Unable to place order");
+    }
+
+    const savedOrder = normalizeOrder({
+      ...data.order,
+      items: items.map(({ product, quantity }) => ({
+        product,
+        quantity,
+      })),
       address,
-      status: "Order Placed",
-      paymentType, // "COD" or "Online"
-      // PLACEHOLDER: no real payment gateway yet, so "Online" is marked as paid.
-      isPaid: paymentType === "Online",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setOrders((prev) => [newOrder, ...prev]);
+    });
+    setOrders((current) => [savedOrder, ...current]);
     setCartItems({});
     toast.success("Order placed successfully");
+    return savedOrder;
   };
 
-  // ============================================================
-  // NEW: ADMIN FUNCTIONS (used only by the /seller pages)
-  // ============================================================
-
-  // Add a product. "data" = { name, category, price, offerPrice, image[], description[] }
-  // It is added at the top of the list and is in stock by default.
-  const addProduct = (data) => {
-    const now = new Date().toISOString();
-    const newProduct = {
-      ...data,
-      _id: Date.now().toString(), // simple unique id (no backend yet)
-      inStock: true,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setProducts((prev) => [newProduct, ...prev]);
+  const addProduct = async (formData) => {
+    const { data } = await api.post("/api/product/add", formData);
+    if (!data.success || !data.product) {
+      throw new Error(data.message || "Unable to add product");
+    }
+    setProducts((current) => [normalizeProduct(data.product), ...current]);
     toast.success("Product added");
   };
 
-  // Edit a product. "changes" = only the fields that changed (also used for the stock toggle)
-  const updateProduct = (id, changes, message = "Product updated") => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p._id === id
-          ? { ...p, ...changes, updatedAt: new Date().toISOString() }
-          : p,
+  const updateProduct = async (id, changes, message = "Product updated") => {
+    const { data } = await api.put(`/api/product/${id}`, changes);
+    if (!data.success || !data.product) {
+      throw new Error(data.message || "Unable to update product");
+    }
+    const updatedProduct = normalizeProduct(data.product);
+    setProducts((current) =>
+      current.map((product) =>
+        product._id === id ? updatedProduct : product,
       ),
     );
     toast.success(message);
   };
 
-  // Delete a product from the shop.
-  const deleteProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p._id !== id));
+  const updateProductStock = async (id, inStock) => {
+    const { data } = await api.post("/api/product/stock", { id, inStock });
+    if (!data.success) {
+      throw new Error(data.message || "Unable to update product stock");
+    }
+    setProducts((current) =>
+      current.map((product) =>
+        product._id === id ? { ...product, inStock } : product,
+      ),
+    );
+    toast.success("Stock updated");
+  };
+
+  const deleteProduct = async (id) => {
+    const { data } = await api.delete(`/api/product/${id}`);
+    if (!data.success) {
+      throw new Error(data.message || "Unable to delete product");
+    }
+    setProducts((current) => current.filter((product) => product._id !== id));
     toast.success("Product deleted");
   };
 
-  // Change the status of one order (used by the status dropdown).
-  const updateOrderStatus = (orderId, status) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o._id === orderId
-          ? { ...o, status, updatedAt: new Date().toISOString() }
-          : o,
+  const updateOrderStatus = async (orderId, status) => {
+    const { data } = await api.patch(`/api/order/${orderId}/status`, { status });
+    if (!data.success) {
+      throw new Error(data.message || "Unable to update order status");
+    }
+    setOrders((current) =>
+      current.map((order) =>
+        order._id === orderId ? { ...order, status } : order,
+      ),
+    );
+    setSellerOrders((current) =>
+      current.map((order) =>
+        order._id === orderId ? { ...order, status } : order,
       ),
     );
     toast.success("Order status updated");
@@ -156,6 +301,7 @@ export const AppContextProvider = ({ children }) => {
     showUserLogin,
     setShowUserLogin,
     products,
+    productsLoaded,
     setProducts,
     fetchProducts,
     cartItems,
@@ -166,22 +312,27 @@ export const AppContextProvider = ({ children }) => {
     searchQuery,
     setSearchQuery,
     addresses,
+    setAddresses,
     selectedAddress,
     setSelectedAddress,
     addAddress,
     orders,
+    sellerOrders,
+    setSellerOrders,
+    fetchOrders,
+    fetchAddresses,
+    fetchSellerOrders,
     placeOrder,
     addProduct,
     updateProduct,
+    updateProductStock,
     deleteProduct,
     updateOrderStatus,
-    axios,
+    axios: api,
   };
+
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-// This hook is intentionally exported alongside the provider for the existing API.
 // eslint-disable-next-line react-refresh/only-export-components
-export const useAppContext = () => {
-  return useContext(AppContext);
-};
+export const useAppContext = () => useContext(AppContext);

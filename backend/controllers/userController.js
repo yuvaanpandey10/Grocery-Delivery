@@ -34,13 +34,18 @@ export const registerUser = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
       secure: process.env.NODE_ENV === "production", // Ensures the cookie is sent over HTTPS in production
-      sameSite: "strict", // Prevents the cookie from being sent with cross-site requests
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 3600000, // 1 hour
     });
 
     return res.status(201).json({
       success: true,
-      user: { email: user.email, name: user.name },
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        cartItems: user.cartItems,
+      },
       message: "User registered successfully",
     });
   } catch (error) {
@@ -86,13 +91,18 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 3600000,
     });
 
     return res.status(200).json({
       success: true,
-      user: { email: user.email, name: user.name },
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        cartItems: user.cartItems,
+      },
       message: "Logged in successfully",
     });
   } catch (error) {
@@ -127,7 +137,7 @@ export const logout = (req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     });
     return res
       .status(200)

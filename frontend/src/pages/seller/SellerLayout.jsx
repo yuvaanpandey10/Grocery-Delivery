@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import toast from "react-hot-toast";
 import { assets } from "../../assets/assets";
 import { useAppContext } from "../../context/AppContext";
 import SellerLogin from "./SellerLogin";
@@ -24,15 +25,26 @@ const sidebarLinks = [
 ];
 
 const SellerLayout = () => {
-  const { isSeller, setIsSeller, navigate } = useAppContext();
+  const { isSeller, setIsSeller, setSellerOrders, navigate, axios } =
+    useAppContext();
 
   // Not logged in as admin: show only the admin login form
   if (!isSeller) return <SellerLogin />;
 
   // Logout: leave admin mode, then go back to the admin login
-  const logout = () => {
-    setIsSeller(false);
-    navigate("/seller");
+  const logout = async () => {
+    try {
+      const { data } = await axios.get("/api/seller/logout");
+      if (!data.success) throw new Error(data.message || "Unable to log out");
+      setIsSeller(false);
+      setSellerOrders([]);
+      navigate("/seller");
+    } catch (error) {
+      console.error("Unable to log out seller:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Unable to log out",
+      );
+    }
   };
 
   return (

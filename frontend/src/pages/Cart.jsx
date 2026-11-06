@@ -33,9 +33,6 @@ const Cart = () => {
   // ---------- LOCAL STATE (only used on this page) ----------
   // Is the address list (under "Change") open?
   const [showAddressList, setShowAddressList] = useState(false);
-  // Chosen payment method: "COD" or "Online"
-  const [paymentMethod, setPaymentMethod] = useState("COD");
-
   // Ref on the address area, to detect clicks outside of it
   const addressRef = useRef(null);
 
@@ -104,43 +101,35 @@ const Cart = () => {
     window.scrollTo(0, 0);
   };
 
-  // 6) NEW: BUTTON TEXT depends on the address and the payment method
-  // - no address yet            -> "Add Address"
-  // - Cash On Delivery          -> "Place Order"
-  // - Online Payment            -> "Proceed to Checkout"
-  const orderButtonText = !selectedAddress
-    ? "Add Address"
-    : paymentMethod === "Online"
-      ? "Proceed to Checkout"
-      : "Place Order";
+  const orderButtonText = selectedAddress ? "Place Order" : "Add Address";
 
   // 7) ORDER BUTTON CLICK
-  const handleOrderButton = () => {
+  const handleOrderButton = async () => {
+    // Addresses and orders are tied to the authenticated account.
+    if (!user) {
+      toast.error("Please login to continue");
+      setShowUserLogin(true);
+      return;
+    }
     // No address: open the Add Address page
     if (!selectedAddress) {
       goToAddAddress();
       return;
     }
-    // Must be logged in (opens your Login popup)
-    if (!user) {
-      toast.error("Please login to place your order");
-      setShowUserLogin(true);
-      return;
-    }
-    // Order items have the same shape as dummyOrders: { product, quantity }
     const items = cartList.map((item) => ({
       product: products.find((p) => p._id === item._id),
       quantity: item.quantity,
     }));
-    placeOrder({
-      items,
-      amount: Number(totalAmount.toFixed(2)),
-      address: selectedAddress,
-      paymentType: paymentMethod, // "COD" or "Online"
-    });
-    // Your My Orders page is not built yet, so we go Home
-    navigate("/");
-    window.scrollTo(0, 0);
+    try {
+      await placeOrder({ items, address: selectedAddress });
+      navigate("/my-orders");
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error("Unable to place order:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Unable to place order",
+      );
+    }
   };
 
   // ---------- EMPTY CART ----------
@@ -331,18 +320,13 @@ const Cart = () => {
               )}
             </div>
 
-            {/* PAYMENT METHOD: Cash On Delivery or Online Payment */}
+            {/* Online payments are not available in the backend yet. */}
             <p className="mt-6 text-sm font-medium uppercase text-gray-700">
               Payment Method
             </p>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="mt-2 w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
-            >
-              <option value="COD">Cash On Delivery</option>
-              <option value="Online">Online Payment</option>
-            </select>
+            <p className="mt-2 w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
+              Cash On Delivery
+            </p>
 
             <hr className="my-5 border-gray-300" />
 

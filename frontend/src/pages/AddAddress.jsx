@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 // ============================================================
 // FORM DATA
@@ -58,7 +59,7 @@ const AddAddress = () => {
   // Go back to the cart and scroll to the top
   const goToCart = () => {
     navigate("/cart");
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   // Save the address (the browser already checked the required fields)

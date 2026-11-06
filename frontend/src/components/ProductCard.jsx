@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { assets } from "../assets/assets";
 // useAppContext = gives us the data and functions from AppContext.jsx
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const ProductCard = () => {
   const shouldReduceMotion = useReducedMotion();
@@ -18,7 +19,7 @@ const ProductCard = () => {
   // NEW: open the product page, e.g. /products/vegetables/gd46g23h
   const openProduct = (product) => {
     navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   return (

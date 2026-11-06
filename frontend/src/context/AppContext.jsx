@@ -5,6 +5,10 @@ import toast from "react-hot-toast";
 import { dummyProducts, dummyOrders } from "../assets/assets";
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+
 const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {

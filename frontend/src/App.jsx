@@ -25,6 +25,7 @@ import ResetPassword from "./pages/ResetPassword.jsx";
 import Contact from "./pages/Contact.jsx";
 import { useAppContext } from "./context/AppContext";
 import SmoothScroll from "./components/SmoothScroll.jsx";
+import LoadingScreen from "./components/LoadingScreen.jsx";
 
 const App = () => {
   const location = useLocation();
@@ -41,11 +42,7 @@ const App = () => {
     user ? page : <Navigate to="/login" state={{ from: location }} replace />;
 
   if (isAuthLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-600">
-        Loading...
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (location.pathname === "/login" && user) {

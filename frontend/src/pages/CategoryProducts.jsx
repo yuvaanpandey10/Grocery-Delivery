@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { assets, categories } from "../assets/assets";
 // Shared data and functions from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const CategoryProducts = () => {
   // 1) Read the category word from the address.
@@ -26,7 +27,7 @@ const CategoryProducts = () => {
   // NEW: open the product page, e.g. /products/vegetables/gd46g23h
   const openProduct = (product) => {
     navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   // 2) Find the category info (we only need its "text" for the header)

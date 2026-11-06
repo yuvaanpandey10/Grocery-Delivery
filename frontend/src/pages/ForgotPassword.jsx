@@ -8,6 +8,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [developmentResetUrl, setDevelopmentResetUrl] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,6 +18,9 @@ const ForgotPassword = () => {
       if (!data.success) {
         throw new Error(data.message || "Unable to request password reset");
       }
+      setDevelopmentResetUrl(
+        data.developmentOnly ? data.resetUrl || "" : "",
+      );
       setSubmitted(true);
     } catch (error) {
       console.error("Password reset request failed:", error);
@@ -37,10 +41,23 @@ const ForgotPassword = () => {
           <span className="text-primary">Reset</span> Password
         </h1>
         {submitted ? (
-          <p className="mt-6 text-center text-sm leading-6">
-            If an account exists for that email, password reset instructions
-            will be sent.
-          </p>
+          <>
+            <p className="mt-6 text-center text-sm leading-6">
+              If an account exists for that email, password reset instructions
+              will be sent.
+            </p>
+            {developmentResetUrl && (
+              <p className="mt-4 text-center text-sm leading-6">
+                Email delivery is not configured for local development.{" "}
+                <Link
+                  to={developmentResetUrl}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Open the password reset link
+                </Link>
+              </p>
+            )}
+          </>
         ) : (
           <>
             <p className="mt-4 text-sm leading-6">

@@ -1,11 +1,37 @@
 // Shared data and functions from your Context API
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const MyOrders = () => {
   // FROM CONTEXT:
   // orders   = all placed orders, newest first (saved by placeOrder in AppContext)
   // navigate = used by "Continue Shopping" when there are no orders
-  const { orders, navigate } = useAppContext();
+  const { orders, ordersLoaded, fetchOrders, navigate, user } = useAppContext();
+  const [isRefreshing, setIsRefreshing] = useState(!ordersLoaded);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    fetchOrders()
+      .catch((error) => {
+        console.error("Unable to refresh your orders:", error);
+        if (!active) return;
+        const message =
+          error.response?.data?.message || "Unable to load your orders";
+        setLoadError(message);
+        toast.error(message);
+      })
+      .finally(() => {
+        if (active) setIsRefreshing(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchOrders, user?._id]);
 
   return (
     // Full-width wrapper (same as your other sections)
@@ -20,7 +46,23 @@ const MyOrders = () => {
         </h1>
 
         {/* NO ORDERS YET: message + button to All Products */}
-        {orders.length === 0 ? (
+        {orders.length === 0 &&
+        (isRefreshing || (!ordersLoaded && !loadError)) ? (
+          <p className="mt-10 text-center text-base text-gray-500">
+            Loading your orders...
+          </p>
+        ) : loadError && orders.length === 0 ? (
+          <div className="mt-10 flex flex-col items-center text-center">
+            <p className="text-base text-gray-500">{loadError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 cursor-pointer rounded bg-primary px-6 py-2 font-medium text-white transition hover:bg-primary-dull"
+            >
+              Try again
+            </button>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="mt-10 flex flex-col items-center text-center">
             <p className="text-base md:text-lg text-gray-500">
               You have no orders yet
@@ -29,7 +71,7 @@ const MyOrders = () => {
               type="button"
               onClick={() => {
                 navigate("/products");
-                window.scrollTo(0, 0);
+                scrollToTop();
               }}
               className="mt-6 cursor-pointer rounded bg-primary px-10 py-3 font-medium text-white transition hover:bg-primary-dull"
             >

@@ -5,6 +5,7 @@ import React from "react";
 import toast from "react-hot-toast";
 // useLocation tells us which page we are on (to know if we must go to /products)
 import { NavLink, useLocation } from "react-router-dom";
+import * as Dialog from "@radix-ui/react-dialog";
 // Your images (logo, cart icon, profile icon, ...)
 import { assets } from "../assets/assets";
 // Shared data from your app: the logged-in user, login popup, navigate(), search text
@@ -174,6 +175,7 @@ const Navbar = () => {
   // ============================================================
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-md">
+      <Dialog.Root open={open} onOpenChange={setOpen}>
       <nav
         aria-label="Main"
         className="mx-auto grid h-18 max-w-screen-2xl grid-cols-[1fr_auto] items-center gap-4 px-5 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:h-20 lg:px-10 xl:px-16"
@@ -307,40 +309,42 @@ const Navbar = () => {
           )}
 
           {/* --- 3d. Hamburger button (phones only: "md:hidden") --- */}
-          <button
-            type="button"
-            className={`${iconButton} md:hidden`}
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            onClick={() => setOpen((v) => !v)}
-          >
-            <svg
-              width="32"
-              height="35"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              aria-hidden="true"
+          <Dialog.Trigger asChild>
+            <button
+              type="button"
+              className={`${iconButton} md:hidden`}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
             >
-              {open ? (
-                <path d="M6 6l12 12M18 6L6 18" />
-              ) : (
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              )}
-            </svg>
-          </button>
+              <svg
+                width="32"
+                height="35"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                {open ? (
+                  <path d="M6 6l12 12M18 6L6 18" />
+                ) : (
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                )}
+              </svg>
+            </button>
+          </Dialog.Trigger>
         </div>
       </nav>
 
-      {/* ---------- BLOCK 4: PHONE MENU ---------- */}
-      {open && (
-        <div
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-gray-950/20 md:hidden" />
+        <Dialog.Content
           id="mobile-menu"
-          className="border-t border-gray-200 bg-white md:hidden"
+          className="fixed inset-x-0 top-[72px] z-[61] max-h-[calc(100dvh-72px)] overflow-y-auto border-t border-gray-200 bg-white shadow-xl outline-none data-[state=open]:animate-[menu-in_220ms_ease-out] md:hidden"
         >
+          <Dialog.Title className="sr-only">Mobile navigation</Dialog.Title>
           <ul className="flex flex-col gap-1 px-5 py-4 sm:px-6">
             {/* Phone search box (first item in the menu).
                 Same state as the desktop box, so the text is shared.
@@ -442,8 +446,9 @@ const Navbar = () => {
               )}
             </li>
           </ul>
-        </div>
-      )}
+        </Dialog.Content>
+      </Dialog.Portal>
+      </Dialog.Root>
     </header>
   );
 };

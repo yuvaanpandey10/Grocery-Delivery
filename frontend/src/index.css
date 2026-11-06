@@ -15,9 +15,76 @@
     height: 100%;
     font-family: "Outfit", sans-serif;
   }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @theme {
   --color-primary: #4bfb8b;
   --color-primary-dull: #44ae7c;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.magic-shimmer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.magic-shimmer__shine {
+  position: absolute;
+  inset: -100% auto -100% -40%;
+  width: 28%;
+  transform: rotate(20deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 55%),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.magic-shimmer:hover .magic-shimmer__shine,
+.magic-shimmer:focus-visible .magic-shimmer__shine {
+  animation: magic-shimmer 700ms ease-out;
+}
+
+@keyframes magic-shimmer {
+  to {
+    transform: translateX(600%) rotate(20deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

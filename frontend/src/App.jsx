@@ -13,14 +13,17 @@ import AddProduct from "./pages/seller/AddProduct.jsx";
 import ProductList from "./pages/seller/ProductList.jsx";
 import SellerOrders from "./pages/seller/SellerOrders.jsx";
 import { Toaster } from "react-hot-toast";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Login from "./components/Login.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import Contact from "./pages/Contact.jsx";
 import { useAppContext } from "./context/AppContext";
+import SmoothScroll from "./components/SmoothScroll.jsx";
 
 const App = () => {
   const location = useLocation();
+  const shouldReduceMotion = useReducedMotion();
   const { user, isAuthLoading } = useAppContext();
   const isSellerPath = location.pathname.startsWith("/seller");
   const isAuthPath =
@@ -45,48 +48,53 @@ const App = () => {
 
   return (
     <div>
+      <SmoothScroll />
       {!isSellerPath && !isAuthPath && <Navbar />}
       <Toaster />
-      <div
-        className={
-          isSellerPath || isAuthPath
-            ? ""
-            : "px-6 md:px-16 lg:px-24 xl:px-32"
-        }
-      >
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/products" element={requireUser(<AllProducts />)} />
-          <Route
-            path="/products/:category"
-            element={requireUser(<CategoryProducts />)}
-          />
-          <Route
-            path="/products/:category/:id"
-            element={requireUser(<ProductDetails />)}
-          />
-          <Route path="/cart" element={requireUser(<Cart />)} />
-          <Route
-            path="/add-address"
-            element={requireUser(<AddAddress />)}
-          />
-          <Route path="/my-orders" element={requireUser(<MyOrders />)} />
-          <Route path="/contact" element={requireUser(<Contact />)} />
-          <Route path="/seller" element={<SellerLayout />}>
-            <Route index element={<AddProduct key="add" />} />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -5 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: "easeOut" }}
+          className={
+            isSellerPath || isAuthPath
+              ? ""
+              : "px-6 md:px-16 lg:px-24 xl:px-32"
+          }
+        >
+          <Routes location={location}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={requireUser(<AllProducts />)} />
             <Route
-              path="edit-product/:id"
-              element={<AddProduct key="edit" />}
+              path="/products/:category"
+              element={requireUser(<CategoryProducts />)}
             />
-            <Route path="product-list" element={<ProductList />} />
-            <Route path="orders" element={<SellerOrders />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+            <Route
+              path="/products/:category/:id"
+              element={requireUser(<ProductDetails />)}
+            />
+            <Route path="/cart" element={requireUser(<Cart />)} />
+            <Route path="/add-address" element={requireUser(<AddAddress />)} />
+            <Route path="/my-orders" element={requireUser(<MyOrders />)} />
+            <Route path="/contact" element={requireUser(<Contact />)} />
+            <Route path="/seller" element={<SellerLayout />}>
+              <Route index element={<AddProduct key="add" />} />
+              <Route
+                path="edit-product/:id"
+                element={<AddProduct key="edit" />}
+              />
+              <Route path="product-list" element={<ProductList />} />
+              <Route path="orders" element={<SellerOrders />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
       {!isSellerPath && !isAuthPath && <Footer />}
     </div>
   );

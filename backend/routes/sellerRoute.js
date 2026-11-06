@@ -17,7 +17,7 @@ const sellerLoginLimiter = rateLimit({
 });
 
 sellerRouter.post("/login", sellerLoginLimiter, sellerLogin);
-sellerRouter.get("/is-auth", authSeller, isSellerAuth);
+sellerRouter.get("/is-auth", isSellerAuth);
 sellerRouter.get("/logout", authSeller, sellerLogout);
 
 export default sellerRouter;

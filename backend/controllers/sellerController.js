@@ -35,11 +35,22 @@ export const sellerLogin = async (req, res) => {
 };
 
 // Seller isAuth : /api/seller/is-auth
-export const isSellerAuth = async (req, res) => {
+export const isSellerAuth = (req, res) => {
+  const { sellerToken } = req.cookies;
+  if (!sellerToken) {
+    return res.status(200).json({ success: false });
+  }
+
   try {
-    return res.status(200).json({ success: true });
+    const decoded = jwt.verify(sellerToken, process.env.JWT_SECRET);
+    return res
+      .status(200)
+      .json({ success: decoded.email === process.env.ADMIN_EMAIL });
   } catch (error) {
-    return res.status(401).json({ success: false, message: error.message });
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(200).json({ success: false });
+    }
+    throw error;
   }
 };
 

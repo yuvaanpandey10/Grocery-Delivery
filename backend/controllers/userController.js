@@ -104,8 +104,16 @@ export const login = async (req, res) => {
 //Check Auth : /api/user/is-auth
 export const isAuth = async (req, res) => {
   try {
-    const { userId } = req.userId;
-    const user = await User.findById(userId).select("-password"); // Exclude password from the response
+    const userId = req.userId;
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
     return res.status(200).json({ success: true, user });
   } catch (error) {
     console.error(error);

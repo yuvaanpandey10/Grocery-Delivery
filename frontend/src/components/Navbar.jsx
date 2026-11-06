@@ -87,6 +87,7 @@ const Navbar = () => {
     setCartItems,
     setAddresses,
     setOrders,
+    setOrdersLoaded,
     setSelectedAddress,
     axios,
     navigate,
@@ -126,6 +127,7 @@ const Navbar = () => {
       setCartItems({});
       setAddresses([]);
       setOrders([]);
+      setOrdersLoaded(false);
       setSelectedAddress(null);
       navigate("/");
     } catch (error) {

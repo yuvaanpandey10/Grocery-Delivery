@@ -2,6 +2,7 @@
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const AllProducts = () => {
   // FROM CONTEXT:
@@ -24,7 +25,7 @@ const AllProducts = () => {
   // NEW: open the product page, e.g. /products/vegetables/gd46g23h
   const openProduct = (product) => {
     navigate(`/products/${product.category.toLowerCase()}/${product._id}`);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   // SEARCH FILTER

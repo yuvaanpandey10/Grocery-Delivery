@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const Cart = () => {
   // FROM CONTEXT:
@@ -90,14 +91,14 @@ const Cart = () => {
   // 4) GO TO ALL PRODUCTS and scroll to the top
   const continueShopping = () => {
     navigate("/products");
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   // 5) NEW: GO TO THE ADD ADDRESS PAGE and scroll to the top
   const goToAddAddress = () => {
     setShowAddressList(false);
     navigate("/add-address");
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   const orderButtonText = selectedAddress ? "Place Order" : "Add Address";
@@ -121,7 +122,7 @@ const Cart = () => {
     try {
       await placeOrder({ items, address: selectedAddress });
       navigate("/my-orders");
-      window.scrollTo(0, 0);
+      scrollToTop();
     } catch (error) {
       console.error("Unable to place order:", error);
       toast.error(

@@ -43,7 +43,7 @@ const AddAddress = () => {
   // FROM CONTEXT:
   // addAddress = saves the address in the context and selects it for delivery
   // navigate   = used to go back to the cart
-  const { addAddress, navigate, user, setShowUserLogin } = useAppContext();
+  const { addAddress, navigate, user } = useAppContext();
 
   // The values typed in the form
   const [form, setForm] = useState(emptyForm);
@@ -65,8 +65,7 @@ const AddAddress = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); // no page reload
     if (!user) {
-      toast.error("Please login before adding a delivery address");
-      setShowUserLogin(true);
+      navigate("/login", { state: { from: { pathname: "/add-address" } } });
       return;
     }
     // trim() removes spaces at the start/end of every value

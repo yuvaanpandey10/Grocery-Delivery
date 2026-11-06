@@ -40,9 +40,7 @@ const authCatalog = async (req, res, next) => {
   }
   if (decodedSeller?.email === process.env.ADMIN_EMAIL) return next();
 
-  return res
-    .status(401)
-    .json({ success: false, message: "Please sign in to view products" });
+  return next();
 };
 
 export default authCatalog;

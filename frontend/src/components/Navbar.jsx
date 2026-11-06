@@ -83,13 +83,10 @@ const Navbar = () => {
   const {
     user,
     setUser,
-    setProducts,
-    setProductsLoaded,
     setAddresses,
     setOrders,
     setSelectedAddress,
     axios,
-    setShowUserLogin,
     navigate,
     searchQuery,
     setSearchQuery,
@@ -97,7 +94,8 @@ const Navbar = () => {
   } = useAppContext();
 
   // The current URL path, e.g. "/" or "/products"
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
 
   // NEW: REAL CART COUNT = total items in the cart.
   // cartItems looks like { gd46g23h: 2, gd47g34h: 1 }, so we add up the counts:
@@ -123,8 +121,6 @@ const Navbar = () => {
       setProfileOpen(false);
       setOpen(false);
       setUser(null);
-      setProducts([]);
-      setProductsLoaded(false);
       setAddresses([]);
       setOrders([]);
       setSelectedAddress(null);
@@ -254,7 +250,7 @@ const Navbar = () => {
           {!user ? (
             <button
               type="button"
-              onClick={() => setShowUserLogin(true)}
+              onClick={() => navigate("/login", { state: { from: location } })}
               className={`ml-1 hidden h-11 px-6 text-sm md:inline-flex lg:px-8 lg:text-[15px] ${loginBtn}`}
             >
               Login
@@ -427,7 +423,7 @@ const Navbar = () => {
                   type="button"
                   onClick={() => {
                     setOpen(false);
-                    setShowUserLogin(true);
+                    navigate("/login", { state: { from: location } });
                   }}
                   className={`flex h-14 w-full text-lg ${loginBtn}`}
                 >

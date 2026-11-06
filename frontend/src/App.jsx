@@ -20,17 +20,15 @@ import { useAppContext } from "./context/AppContext";
 
 const App = () => {
   const location = useLocation();
-  const {
-    showUserLogin,
-    user,
-    isAuthLoading,
-    authError,
-  } = useAppContext();
+  const { user, isAuthLoading } = useAppContext();
   const isSellerPath = location.pathname.startsWith("/seller");
   const isAuthPath =
     location.pathname === "/login" ||
     location.pathname === "/forgot-password" ||
     location.pathname.startsWith("/reset-password/");
+
+  const requireUser = (page) =>
+    user ? page : <Navigate to="/login" state={{ from: location }} replace />;
 
   if (isAuthLoading) {
     return (
@@ -40,24 +38,6 @@ const App = () => {
     );
   }
 
-  if (!isSellerPath && !isAuthPath && !user) {
-    if (authError) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center text-gray-600">
-          <p>{authError}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="rounded bg-primary px-6 py-2 font-medium text-white hover:bg-primary-dull"
-          >
-            Try again
-          </button>
-        </main>
-      );
-    }
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
   if (location.pathname === "/login" && user) {
     return <Navigate to={location.state?.from?.pathname || "/"} replace />;
   }
@@ -65,7 +45,6 @@ const App = () => {
   return (
     <div>
       {!isSellerPath && !isAuthPath && <Navbar />}
-      {showUserLogin && user && !isSellerPath && <Login />}
       <Toaster />
       <div
         className={
@@ -75,7 +54,7 @@ const App = () => {
         }
       >
         <Routes>
-          <Route path="/login" element={<Login standalone />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={<Home />} />
@@ -86,8 +65,11 @@ const App = () => {
             element={<ProductDetails />}
           />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/add-address" element={<AddAddress />} />
-          <Route path="/my-orders" element={<MyOrders />} />
+          <Route
+            path="/add-address"
+            element={requireUser(<AddAddress />)}
+          />
+          <Route path="/my-orders" element={requireUser(<MyOrders />)} />
           <Route path="/seller" element={<SellerLayout />}>
             <Route index element={<AddProduct key="add" />} />
             <Route

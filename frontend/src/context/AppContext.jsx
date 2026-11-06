@@ -16,6 +16,46 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const guestCartStorageKey = "greencart_guest_cart";
+
+const readGuestCart = () => {
+  try {
+    const savedCart = window.localStorage.getItem(guestCartStorageKey);
+    if (!savedCart) return {};
+    const cart = JSON.parse(savedCart);
+    if (!cart || typeof cart !== "object" || Array.isArray(cart)) {
+      throw new Error("Saved guest cart has an invalid format");
+    }
+    return Object.fromEntries(
+      Object.entries(cart).filter(
+        ([id, quantity]) =>
+          id && Number.isInteger(quantity) && quantity > 0 && quantity <= 99,
+      ),
+    );
+  } catch (error) {
+    console.error("Unable to restore guest cart:", error);
+    return {};
+  }
+};
+
+const clearGuestCartStorage = () => {
+  try {
+    window.localStorage.removeItem(guestCartStorageKey);
+  } catch (error) {
+    console.error("Unable to clear saved guest cart:", error);
+  }
+};
+
+const mergeCartItems = (accountCart = {}, guestCart = {}) => {
+  const merged = { ...accountCart };
+  Object.entries(guestCart).forEach(([id, quantity]) => {
+    if (Number.isInteger(quantity) && quantity > 0) {
+      merged[id] = Math.min(99, (merged[id] || 0) + quantity);
+    }
+  });
+  return merged;
+};
+
 const AppContext = createContext();
 
 const normalizeProduct = (product) => ({
@@ -51,11 +91,9 @@ export const AppContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState("");
-  const [showUserLogin, setShowUserLogin] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
-  const [cartItems, setCartItems] = useState({});
+  const [cartItems, setCartItems] = useState(readGuestCart);
   const [searchQuery, setSearchQuery] = useState("");
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -63,6 +101,11 @@ export const AppContextProvider = ({ children }) => {
   const [sellerOrders, setSellerOrders] = useState([]);
   const [sellerOrdersLoaded, setSellerOrdersLoaded] = useState(false);
   const cartSaveQueue = useRef(Promise.resolve());
+
+  const mergeAuthenticatedCart = useCallback((accountCart) => {
+    setCartItems((guestCart) => mergeCartItems(accountCart, guestCart));
+    clearGuestCartStorage();
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     const { data } = await api.get("/api/product/list");
@@ -131,16 +174,12 @@ export const AppContextProvider = ({ children }) => {
       if (isUserAuthenticated) {
         const restoredUser = userResult.value.data.user;
         setUser(restoredUser);
-        setCartItems(restoredUser.cartItems || {});
+        mergeAuthenticatedCart(restoredUser.cartItems || {});
       } else if (
         userResult.status === "rejected" &&
         ![401, 404].includes(userResult.reason.response?.status)
       ) {
         console.error("Unable to restore user session:", userResult.reason);
-        setAuthError(
-          userResult.reason.response?.data?.message ||
-            "Unable to connect to the authentication service.",
-        );
       }
 
       if (sellerResult.status === "fulfilled") {
@@ -153,10 +192,6 @@ export const AppContextProvider = ({ children }) => {
         )
       ) {
         console.error("Unable to restore seller session:", sellerResult.reason);
-        setAuthError(
-          sellerResult.reason.response?.data?.message ||
-            "Unable to connect to the authentication service.",
-        );
       }
 
       const initialDataRequests = [];
@@ -181,18 +216,17 @@ export const AppContextProvider = ({ children }) => {
     restoreSessions().catch((error) => {
       if (!active) return;
       console.error("Unable to restore application session:", error);
-      setAuthError("Unable to connect to the authentication service.");
       setIsAuthLoading(false);
     });
 
     return () => {
       active = false;
     };
-  }, [fetchAddresses, fetchOrders, fetchProducts]);
+  }, [fetchAddresses, fetchOrders, fetchProducts, mergeAuthenticatedCart]);
 
   const userId = user?._id;
   useEffect(() => {
-    if (!userId && !isSeller) return;
+    if (isAuthLoading) return;
     Promise.resolve()
       .then(fetchProducts)
       .catch((error) => {
@@ -200,7 +234,17 @@ export const AppContextProvider = ({ children }) => {
         setProductsLoaded(true);
         toast.error(error.response?.data?.message || "Unable to load products");
       });
-  }, [fetchProducts, isSeller, userId]);
+  }, [fetchProducts, isAuthLoading]);
+
+  useEffect(() => {
+    if (userId) return;
+    try {
+      window.localStorage.setItem(guestCartStorageKey, JSON.stringify(cartItems));
+    } catch (error) {
+      console.error("Unable to save guest cart:", error);
+      toast.error("Unable to save your cart on this device");
+    }
+  }, [cartItems, userId]);
 
   useEffect(() => {
     if (!isSeller) return;
@@ -366,9 +410,7 @@ export const AppContextProvider = ({ children }) => {
     isSeller,
     setIsSeller,
     isAuthLoading,
-    authError,
-    showUserLogin,
-    setShowUserLogin,
+    mergeAuthenticatedCart,
     products,
     productsLoaded,
     setProducts,

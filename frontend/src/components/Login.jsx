@@ -3,14 +3,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppContext } from "../context/AppContext";
 
-const Login = ({ standalone = false }) => {
+const Login = () => {
   const {
     axios,
     fetchAddresses,
     fetchOrders,
-    setShowUserLogin,
     setUser,
-    setCartItems,
+    mergeAuthenticatedCart,
   } = useAppContext();
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
@@ -34,7 +33,7 @@ const Login = ({ standalone = false }) => {
       }
 
       setUser(data.user);
-      setCartItems(data.user.cartItems || {});
+      mergeAuthenticatedCart(data.user.cartItems || {});
       const accountData = await Promise.allSettled([
         fetchAddresses(),
         fetchOrders(),
@@ -45,11 +44,8 @@ const Login = ({ standalone = false }) => {
         }
       });
 
-      setShowUserLogin(false);
       toast.success(mode === "login" ? "Logged in" : "Account created");
-      if (standalone) {
-        navigate(location.state?.from?.pathname || "/", { replace: true });
-      }
+      navigate(location.state?.from?.pathname || "/", { replace: true });
     } catch (error) {
       console.error("User authentication failed:", error);
       toast.error(
@@ -92,11 +88,11 @@ const Login = ({ standalone = false }) => {
       )}
 
       <div className="mt-6">
-        <label htmlFor={standalone ? "page-email" : "email"} className="text-base sm:text-lg">
+        <label htmlFor="page-email" className="text-base sm:text-lg">
           Email
         </label>
         <input
-          id={standalone ? "page-email" : "email"}
+          id="page-email"
           type="email"
           autoComplete="off"
           maxLength={254}
@@ -109,11 +105,11 @@ const Login = ({ standalone = false }) => {
       </div>
 
       <div className="mt-6">
-        <label htmlFor={standalone ? "page-password" : "password"} className="text-base sm:text-lg">
+        <label htmlFor="page-password" className="text-base sm:text-lg">
           Password
         </label>
         <input
-          id={standalone ? "page-password" : "password"}
+          id="page-password"
           type="password"
           autoComplete="new-password"
           readOnly={!isPasswordEditable}
@@ -133,7 +129,6 @@ const Login = ({ standalone = false }) => {
           <Link
             to="/forgot-password"
             className="text-sm text-primary hover:underline"
-            onClick={() => setShowUserLogin(false)}
           >
             Forgot password?
           </Link>
@@ -171,21 +166,10 @@ const Login = ({ standalone = false }) => {
     </form>
   );
 
-  if (standalone) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
-        {form}
-      </main>
-    );
-  }
-
   return (
-    <div
-      onClick={() => setShowUserLogin(false)}
-      className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 px-4"
-    >
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
       {form}
-    </div>
+    </main>
   );
 };
 

@@ -13,7 +13,7 @@ const Cart = () => {
   // setCartItems     = used to delete a whole product from the cart (X button)
   // updateCartItem   = sets a product's quantity directly (Qty dropdown)
   // navigate         = used for page changes
-  // user, setShowUserLogin = to ask the user to login before ordering
+  // user = to require sign-in before ordering
   // addresses, selectedAddress, setSelectedAddress = delivery address
   // placeOrder       = saves the order and empties the cart
   const {
@@ -23,7 +23,6 @@ const Cart = () => {
     updateCartItem,
     navigate,
     user,
-    setShowUserLogin,
     addresses,
     selectedAddress,
     setSelectedAddress,
@@ -107,8 +106,7 @@ const Cart = () => {
   const handleOrderButton = async () => {
     // Addresses and orders are tied to the authenticated account.
     if (!user) {
-      toast.error("Please login to continue");
-      setShowUserLogin(true);
+      navigate("/login", { state: { from: { pathname: "/cart" } } });
       return;
     }
     // No address: open the Add Address page

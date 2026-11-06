@@ -5,6 +5,7 @@ import { useParams, Link } from "react-router-dom";
 import { assets } from "../assets/assets";
 // Shared data and functions from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToTop } from "../utils/scroll";
 
 const ProductDetails = () => {
   // 1) Read the product id from the address: /products/vegetables/gd46g23h -> id = "gd46g23h"
@@ -58,7 +59,7 @@ const ProductDetails = () => {
   // Open another product page and scroll to the top
   const openProduct = (p) => {
     navigate(`/products/${p.category.toLowerCase()}/${p._id}`);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   return (
@@ -198,7 +199,7 @@ const ProductDetails = () => {
                 type="button"
                 onClick={() => {
                   navigate("/cart");
-                  window.scrollTo(0, 0);
+                  scrollToTop();
                 }}
                 className="flex-1 cursor-pointer bg-primary py-3.5 font-medium text-white transition hover:bg-primary-dull"
               >
@@ -316,7 +317,7 @@ const ProductDetails = () => {
             type="button"
             onClick={() => {
               navigate("/products");
-              window.scrollTo(0, 0);
+              scrollToTop();
             }}
             className="cursor-pointer rounded border border-primary/40 bg-primary/10 px-12 py-2.5 font-medium text-primary transition hover:bg-primary/20"
           >

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 // CHANGED: dummyOrders is now also imported (used to fill the admin Orders page)
 import { dummyProducts, dummyOrders } from "../assets/assets";
+import axios from "axios";
 
 const AppContext = createContext();
 
@@ -166,10 +167,11 @@ export const AppContextProvider = ({ children }) => {
     addAddress,
     orders,
     placeOrder,
-    addProduct, // NEW
-    updateProduct, // NEW
-    deleteProduct, // NEW
-    updateOrderStatus, // NEW
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    updateOrderStatus,
+    axios,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

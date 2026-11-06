@@ -1,24 +1,49 @@
-# Logs
-logs
+# Dependencies
+node_modules/
+/vendor/
+/bower_components/
+
+# Production/Build outputs
+/build/
+/dist/
+/out/
+*.exe
+*.dll
+*.so
+*.dmg
+
+# Environment variables and secrets (CRITICAL)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.der
+
+# Logs and databases
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+*.sql
+*.sqlite
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# IDEs and Editors
+.vscode/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.swp
+*~
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

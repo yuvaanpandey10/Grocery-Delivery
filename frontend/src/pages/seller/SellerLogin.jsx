@@ -11,23 +11,31 @@ const ADMIN_PASSWORD = "admin123";
 
 const SellerLogin = () => {
   // From Context: setIsSeller(true) = the admin is logged in
-  const { setIsSeller } = useAppContext();
+  const { setIsSeller, axios } = useAppContext();
 
   // Local state only for this form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   // Runs when the form is submitted (button click or Enter key)
-  const handleSubmit = (e) => {
-    e.preventDefault(); // stop the page from reloading
+  const handleSubmit = async (e) => {
 
-    // Compare with the fixed admin credentials
-    if (email.trim() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      setIsSeller(true);
-      toast.success("Welcome back, admin");
-    } else {
-      toast.error("Wrong email or password");
-    }
+
+    try {
+       e.preventDefault(); // stop the page from reloading
+       const { data } = await axios.post("/api/seller/login", { email, password });
+       if (data.success) {
+         setIsSeller(true);
+         toast.success("Admin logged in successfully");
+       } else {
+         toast.error(data.message || "Invalid credentials");
+       }
+     } catch (error) {
+       console.error("Error during admin login:", error);
+       toast.error("An error occurred during login");
+     }
+    } catch (error) {
+
   };
 
   return (

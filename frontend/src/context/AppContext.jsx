@@ -6,55 +6,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
+  baseURL:
+    import.meta.env.VITE_BACKEND_URL ||
+    (import.meta.env.DEV ? "http://localhost:4000" : window.location.origin),
   withCredentials: true,
   timeout: 15000,
 });
-
-const guestCartStorageKey = "greencart_guest_cart";
-
-const readGuestCart = () => {
-  try {
-    const savedCart = window.localStorage.getItem(guestCartStorageKey);
-    if (!savedCart) return {};
-    const cart = JSON.parse(savedCart);
-    if (!cart || typeof cart !== "object" || Array.isArray(cart)) {
-      throw new Error("Saved guest cart has an invalid format");
-    }
-    return Object.fromEntries(
-      Object.entries(cart).filter(
-        ([id, quantity]) =>
-          id && Number.isInteger(quantity) && quantity > 0 && quantity <= 99,
-      ),
-    );
-  } catch (error) {
-    console.error("Unable to restore guest cart:", error);
-    return {};
-  }
-};
-
-const clearGuestCartStorage = () => {
-  try {
-    window.localStorage.removeItem(guestCartStorageKey);
-  } catch (error) {
-    console.error("Unable to clear saved guest cart:", error);
-  }
-};
-
-const mergeCartItems = (accountCart = {}, guestCart = {}) => {
-  const merged = { ...accountCart };
-  Object.entries(guestCart).forEach(([id, quantity]) => {
-    if (Number.isInteger(quantity) && quantity > 0) {
-      merged[id] = Math.min(99, (merged[id] || 0) + quantity);
-    }
-  });
-  return merged;
-};
 
 const AppContext = createContext();
 
@@ -88,12 +50,13 @@ const normalizeOrder = (order) => ({
 
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
-  const [cartItems, setCartItems] = useState(readGuestCart);
+  const [cartItems, setCartItems] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -101,11 +64,6 @@ export const AppContextProvider = ({ children }) => {
   const [sellerOrders, setSellerOrders] = useState([]);
   const [sellerOrdersLoaded, setSellerOrdersLoaded] = useState(false);
   const cartSaveQueue = useRef(Promise.resolve());
-
-  const mergeAuthenticatedCart = useCallback((accountCart) => {
-    setCartItems((guestCart) => mergeCartItems(accountCart, guestCart));
-    clearGuestCartStorage();
-  }, []);
 
   const fetchProducts = useCallback(async () => {
     const { data } = await api.get("/api/product/list");
@@ -174,7 +132,7 @@ export const AppContextProvider = ({ children }) => {
       if (isUserAuthenticated) {
         const restoredUser = userResult.value.data.user;
         setUser(restoredUser);
-        mergeAuthenticatedCart(restoredUser.cartItems || {});
+        setCartItems(restoredUser.cartItems || {});
       } else if (
         userResult.status === "rejected" &&
         ![401, 404].includes(userResult.reason.response?.status)
@@ -222,7 +180,7 @@ export const AppContextProvider = ({ children }) => {
     return () => {
       active = false;
     };
-  }, [fetchAddresses, fetchOrders, fetchProducts, mergeAuthenticatedCart]);
+  }, [fetchAddresses, fetchOrders, fetchProducts]);
 
   const userId = user?._id;
   useEffect(() => {
@@ -235,16 +193,6 @@ export const AppContextProvider = ({ children }) => {
         toast.error(error.response?.data?.message || "Unable to load products");
       });
   }, [fetchProducts, isAuthLoading]);
-
-  useEffect(() => {
-    if (userId) return;
-    try {
-      window.localStorage.setItem(guestCartStorageKey, JSON.stringify(cartItems));
-    } catch (error) {
-      console.error("Unable to save guest cart:", error);
-      toast.error("Unable to save your cart on this device");
-    }
-  }, [cartItems, userId]);
 
   useEffect(() => {
     if (!isSeller) return;
@@ -281,9 +229,18 @@ export const AppContextProvider = ({ children }) => {
   }, [cartItems, userId]);
 
   const addToCart = (itemId) => {
+    if (!user) {
+      toast("Please sign in to add items to your cart");
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if ((cartItems[itemId] || 0) >= 99) {
+      toast.error("You can add up to 99 of this item");
+      return;
+    }
     setCartItems((current) => ({
       ...current,
-      [itemId]: (current[itemId] || 0) + 1,
+      [itemId]: Math.min(99, (current[itemId] || 0) + 1),
     }));
     toast.success("Item added to cart");
   };
@@ -410,7 +367,6 @@ export const AppContextProvider = ({ children }) => {
     isSeller,
     setIsSeller,
     isAuthLoading,
-    mergeAuthenticatedCart,
     products,
     productsLoaded,
     setProducts,

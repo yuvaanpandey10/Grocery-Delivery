@@ -16,6 +16,7 @@ import { Toaster } from "react-hot-toast";
 import Login from "./components/Login.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import Contact from "./pages/Contact.jsx";
 import { useAppContext } from "./context/AppContext";
 
 const App = () => {
@@ -58,18 +59,22 @@ const App = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={<Home />} />
-          <Route path="/products" element={<AllProducts />} />
-          <Route path="/products/:category" element={<CategoryProducts />} />
+          <Route path="/products" element={requireUser(<AllProducts />)} />
+          <Route
+            path="/products/:category"
+            element={requireUser(<CategoryProducts />)}
+          />
           <Route
             path="/products/:category/:id"
-            element={<ProductDetails />}
+            element={requireUser(<ProductDetails />)}
           />
-          <Route path="/cart" element={<Cart />} />
+          <Route path="/cart" element={requireUser(<Cart />)} />
           <Route
             path="/add-address"
             element={requireUser(<AddAddress />)}
           />
           <Route path="/my-orders" element={requireUser(<MyOrders />)} />
+          <Route path="/contact" element={requireUser(<Contact />)} />
           <Route path="/seller" element={<SellerLayout />}>
             <Route index element={<AddProduct key="add" />} />
             <Route

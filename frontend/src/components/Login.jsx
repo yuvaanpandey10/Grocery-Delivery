@@ -9,7 +9,7 @@ const Login = () => {
     fetchAddresses,
     fetchOrders,
     setUser,
-    mergeAuthenticatedCart,
+    setCartItems,
   } = useAppContext();
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
@@ -33,7 +33,7 @@ const Login = () => {
       }
 
       setUser(data.user);
-      mergeAuthenticatedCart(data.user.cartItems || {});
+      setCartItems(data.user.cartItems || {});
       const accountData = await Promise.allSettled([
         fetchAddresses(),
         fetchOrders(),

@@ -12,8 +12,11 @@ const SmoothScroll = () => {
       "(prefers-reduced-motion: reduce)",
     );
     let lenis;
+    let contentResizeObserver;
 
     const updateScrollMotion = () => {
+      contentResizeObserver?.disconnect();
+      contentResizeObserver = undefined;
       lenis?.destroy();
       lenis = undefined;
       lenisRef.current = null;
@@ -32,6 +35,12 @@ const SmoothScroll = () => {
       });
       lenisRef.current = lenis;
       setLenisInstance(lenis);
+
+      const appRoot = document.getElementById("root");
+      if (appRoot) {
+        contentResizeObserver = new ResizeObserver(() => lenis?.resize());
+        contentResizeObserver.observe(appRoot);
+      }
     };
 
     updateScrollMotion();
@@ -39,6 +48,7 @@ const SmoothScroll = () => {
 
     return () => {
       motionPreference.removeEventListener("change", updateScrollMotion);
+      contentResizeObserver?.disconnect();
       lenis?.destroy();
       lenisRef.current = null;
       setLenisInstance(null);

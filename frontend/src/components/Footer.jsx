@@ -2,6 +2,7 @@
 import { assets, footerLinks } from "../assets/assets";
 // Import navigate() from your Context API
 import { useAppContext } from "../context/AppContext";
+import { scrollToElement, scrollToTop } from "../utils/scroll";
 
 const Footer = () => {
   const { navigate } = useAppContext();
@@ -13,21 +14,21 @@ const Footer = () => {
     // Go to the home page and scroll to the top
     Home: () => {
       navigate("/");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToTop();
     },
     // Go to the contact page (not built yet) and scroll to the top
     "Contact Us": () => {
       navigate("/contact");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToTop();
     },
     // Go to the home page, then scroll to the section with id="best-sellers"
     "Best Sellers": () => {
       navigate("/");
       // small delay so the home page is drawn before we scroll
       setTimeout(() => {
-        document
-          .getElementById("best-sellers")
-          ?.scrollIntoView({ behavior: "smooth" });
+        scrollToElement(document.getElementById("best-sellers"), {
+          offset: -88,
+        });
       }, 100);
     },
   };

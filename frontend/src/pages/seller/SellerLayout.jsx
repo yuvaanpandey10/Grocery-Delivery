@@ -25,8 +25,14 @@ const sidebarLinks = [
 ];
 
 const SellerLayout = () => {
-  const { isSeller, setIsSeller, setSellerOrders, navigate, axios } =
-    useAppContext();
+  const {
+    isSeller,
+    setIsSeller,
+    setSellerOrders,
+    setSellerOrdersLoaded,
+    navigate,
+    axios,
+  } = useAppContext();
 
   // Not logged in as admin: show only the admin login form
   if (!isSeller) return <SellerLogin />;
@@ -38,6 +44,7 @@ const SellerLayout = () => {
       if (!data.success) throw new Error(data.message || "Unable to log out");
       setIsSeller(false);
       setSellerOrders([]);
+      setSellerOrdersLoaded(false);
       navigate("/seller");
     } catch (error) {
       console.error("Unable to log out seller:", error);

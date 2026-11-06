@@ -37,7 +37,7 @@ export const isSellerAuth = async (req, res) => {
   try {
     return res.status(200).json({ success: true });
   } catch (error) {
-    res.status(401).json({ success: false, message: error.message });
+    return res.status(401).json({ success: false, message: error.message });
   }
 };
 

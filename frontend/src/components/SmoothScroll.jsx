@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import Lenis from "lenis";
+import { scrollToTop, setLenisInstance } from "../utils/scroll";
 
 const SmoothScroll = () => {
   const lenisRef = useRef(null);
@@ -13,10 +14,12 @@ const SmoothScroll = () => {
     let lenis;
 
     const updateScrollMotion = () => {
+      lenis?.destroy();
+      lenis = undefined;
+      lenisRef.current = null;
+      setLenisInstance(null);
+
       if (motionPreference.matches) {
-        lenis?.destroy();
-        lenis = undefined;
-        lenisRef.current = null;
         return;
       }
 
@@ -28,6 +31,7 @@ const SmoothScroll = () => {
         smoothWheel: true,
       });
       lenisRef.current = lenis;
+      setLenisInstance(lenis);
     };
 
     updateScrollMotion();
@@ -37,19 +41,18 @@ const SmoothScroll = () => {
       motionPreference.removeEventListener("change", updateScrollMotion);
       lenis?.destroy();
       lenisRef.current = null;
+      setLenisInstance(null);
     };
   }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      if (hash) {
-        lenisRef.current?.scrollTo(hash, { offset: -88 });
+      if (hash && lenisRef.current) {
+        lenisRef.current.scrollTo(hash, { offset: -88, force: true });
+      } else if (hash) {
+        document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" });
       } else {
-        lenisRef.current?.scrollTo(0, { immediate: false });
-      }
-
-      if (!lenisRef.current) {
-        window.scrollTo({ top: 0, behavior: hash ? "smooth" : "auto" });
+        scrollToTop({ immediate: true, force: true });
       }
     });
 

@@ -23,7 +23,8 @@ const SmoothScroll = () => {
       lenis = new Lenis({
         autoRaf: true,
         anchors: { offset: -88 },
-        duration: 1,
+        duration: 1.15,
+        lerp: 0.09,
         smoothWheel: true,
       });
       lenisRef.current = lenis;
@@ -44,11 +45,11 @@ const SmoothScroll = () => {
       if (hash) {
         lenisRef.current?.scrollTo(hash, { offset: -88 });
       } else {
-        lenisRef.current?.scrollTo(0, { immediate: true });
+        lenisRef.current?.scrollTo(0, { immediate: false });
       }
 
       if (!lenisRef.current) {
-        window.scrollTo({ top: 0, behavior: "auto" });
+        window.scrollTo({ top: 0, behavior: hash ? "smooth" : "auto" });
       }
     });
 

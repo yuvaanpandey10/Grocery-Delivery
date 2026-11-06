@@ -1,23 +1,48 @@
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
 import { assets } from "../assets/assets";
 import MagicShimmer from "./MagicShimmer";
 
 const MainBanner = () => {
   const shouldReduceMotion = useReducedMotion();
+  const bannerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: bannerRef,
+    offset: ["start start", "end start"],
+  });
+  const backgroundY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [0, shouldReduceMotion ? 0 : -36],
+  );
 
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2 px-4 md:px-8 xl:px-12">
-      <div className="relative mx-auto max-w-[1600px]">
-        <img
+      <div ref={bannerRef} className="relative mx-auto max-w-[1600px] overflow-hidden rounded-2xl">
+        <motion.img
           src={assets.main_banner_bg}
           alt="Banner"
-          className="w-full hidden md:block rounded-2xl"
+          style={{ y: backgroundY }}
+          initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.035 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 1.1,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="hidden w-full md:block"
         />
-        <img
+        <motion.img
           src={assets.main_banner_bg_sm}
           alt="Banner"
-          className="w-full md:hidden rounded-2xl"
+          style={{ y: backgroundY }}
+          initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.035 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 1.1,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="w-full md:hidden"
         />
         <div className="absolute inset-0 bottom-18 flex flex-col items-center md:items-start justify-end md:justify-center pb-6 sm:pb-10 md:pb-0 px-4 md:pl-12 lg:pl-16 xl:pl-24">
           <motion.h1

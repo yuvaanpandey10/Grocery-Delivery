@@ -1,10 +1,12 @@
 // Import the categories array from assets.js
 // Each item has: text, path, image, bgColor
+import { motion, useReducedMotion } from "motion/react";
 import { categories } from "../assets/assets";
 // Import the context hook so we can use `navigate` from AppContext.jsx
 import { useAppContext } from "../context/AppContext";
 
 const Category = () => {
+  const shouldReduceMotion = useReducedMotion();
   // Get the navigate function from AppContext
   // (it is the same useNavigate from react-router-dom, shared through context)
   const { navigate } = useAppContext();
@@ -34,7 +36,7 @@ const Category = () => {
           {/* MAP METHOD: loops over every category and makes one card for each.
               "category" = the current item, "index" = its position (0, 1, 2...) */}
           {categories.map((category, index) => (
-            <div
+            <motion.div
               // key is required by React when using map. It must be unique.
               key={index}
               // group = lets the image react when the CARD is hovered
@@ -45,6 +47,18 @@ const Category = () => {
               // flex flex-col justify-center items-center = stack image + text
               //   vertically and center them
               className="group cursor-pointer py-5 px-3 gap-2 rounded-lg flex flex-col justify-center items-center"
+              initial={{
+                opacity: 0,
+                y: shouldReduceMotion ? 0 : 22,
+                scale: shouldReduceMotion ? 1 : 0.97,
+              }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: shouldReduceMotion ? 0 : 0.55,
+                delay: shouldReduceMotion ? 0 : index * 0.07,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               // Background color comes from assets.js (category.bgColor).
               // We use inline style because Tailwind can't make classes
               // from values that are only known at runtime.
@@ -71,7 +85,7 @@ const Category = () => {
 
               {/* CATEGORY NAME (for example "Organic veggies") */}
               <p className="text-sm font-medium text-center">{category.text}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

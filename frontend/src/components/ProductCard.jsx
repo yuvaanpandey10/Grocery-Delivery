@@ -1,9 +1,11 @@
 // assets = icons (star_icon, star_dull_icon, cart_icon)
+import { motion, useReducedMotion } from "motion/react";
 import { assets } from "../assets/assets";
 // useAppContext = gives us the data and functions from AppContext.jsx
 import { useAppContext } from "../context/AppContext";
 
 const ProductCard = () => {
+  const shouldReduceMotion = useReducedMotion();
   // FROM CONTEXT:
   // products       = product list
   // cartItems      = object of counts by product id, e.g. { gd46g23h: 2 }
@@ -34,11 +36,23 @@ const ProductCard = () => {
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
         {/* MAP METHOD: slice(0, 5) = first 5 products, one card for each.
             key = product._id (unique id from assets.js) */}
-        {products.slice(0, 5).map((product) => (
+        {products.slice(0, 5).map((product, index) => (
           // CARD: group lets the image zoom when the whole card is hovered
-          <div
+          <motion.div
             key={product._id}
             className="group border border-gray-500/20 rounded-md px-3 md:px-4 py-3 bg-white"
+            initial={{
+              opacity: 0,
+              y: shouldReduceMotion ? 0 : 26,
+              scale: shouldReduceMotion ? 1 : 0.98,
+            }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.18 }}
+            transition={{
+              duration: shouldReduceMotion ? 0 : 0.6,
+              delay: shouldReduceMotion ? 0 : (index % 5) * 0.08,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             {/* IMAGE: product.image is an array, [0] = first image.
                 NEW: click opens the product page */}
@@ -131,8 +145,8 @@ const ProductCard = () => {
                   )}
                 </div>
               </div>
-            </div>
           </div>
+          </motion.div>
         ))}
       </div>
     </>

@@ -13,7 +13,12 @@ import AddProduct from "./pages/seller/AddProduct.jsx";
 import ProductList from "./pages/seller/ProductList.jsx";
 import SellerOrders from "./pages/seller/SellerOrders.jsx";
 import { Toaster } from "react-hot-toast";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+} from "motion/react";
 import Login from "./components/Login.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
@@ -24,6 +29,7 @@ import SmoothScroll from "./components/SmoothScroll.jsx";
 const App = () => {
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll();
   const { user, isAuthLoading } = useAppContext();
   const isSellerPath = location.pathname.startsWith("/seller");
   const isAuthPath =
@@ -49,15 +55,25 @@ const App = () => {
   return (
     <div>
       <SmoothScroll />
+      {!shouldReduceMotion && (
+        <motion.div
+          aria-hidden="true"
+          className="fixed inset-x-0 top-0 z-[100] h-1 origin-left bg-primary"
+          style={{ scaleX: scrollYProgress }}
+        />
+      )}
       {!isSellerPath && !isAuthPath && <Navbar />}
       <Toaster />
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="wait">
         <motion.div
           key={location.pathname}
-          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -5 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: "easeOut" }}
+          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.55,
+            ease: [0.22, 1, 0.36, 1],
+          }}
           className={
             isSellerPath || isAuthPath
               ? ""

@@ -45,7 +45,7 @@ const SellerLogin = () => {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin email"
+            placeholder="admin@example.com"
             className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
           />
         </div>
@@ -59,7 +59,7 @@ const SellerLogin = () => {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="password"
+            placeholder="ExamplePassword123!"
             className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
           />
         </div>

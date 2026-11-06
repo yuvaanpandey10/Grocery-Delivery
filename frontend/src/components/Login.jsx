@@ -83,7 +83,7 @@ const Login = ({ standalone = false }) => {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="type here"
+            placeholder="example@email.com"
             className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
           />
         </div>
@@ -101,7 +101,7 @@ const Login = ({ standalone = false }) => {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="type here"
+          placeholder="ExamplePassword123!"
           className="mt-2 h-12 w-full rounded border border-gray-200 px-3 text-base outline-primary placeholder:text-gray-400"
         />
       </div>

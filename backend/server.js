@@ -12,6 +12,7 @@ import cartRouter from "./routes/cartRoute.js";
 import addressRouter from "./routes/addressRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import contactRouter from "./routes/contactRoute.js";
+import { handleStripeWebhook } from "./controllers/stripeController.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -95,6 +96,12 @@ const allowedOrigins = new Set([
     .filter(Boolean)
     .map((origin) => new URL(origin).origin),
 ]);
+
+app.post(
+  "/api/order/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook,
+);
 
 // Middleware configuration
 app.disable("x-powered-by");

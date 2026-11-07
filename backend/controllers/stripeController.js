@@ -4,12 +4,29 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 
 const getStripe = () => {
-  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
+  const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
+  if (!secretKey) {
     const error = new Error("Stripe payments are not configured");
     error.statusCode = 503;
     throw error;
   }
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
+  const mode =
+    process.env.STRIPE_MODE ||
+    (process.env.NODE_ENV === "production" ? "" : "test");
+  if (!["test", "live"].includes(mode)) {
+    const error = new Error("Set STRIPE_MODE to test or live");
+    error.statusCode = 503;
+    throw error;
+  }
+  const expectedPrefix = mode === "test" ? "sk_test_" : "sk_live_";
+  if (!secretKey.startsWith(expectedPrefix)) {
+    const error = new Error(
+      `The configured Stripe secret key does not match STRIPE_MODE=${mode}`,
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+  return new Stripe(secretKey);
 };
 
 const getClientUrl = () => {
@@ -138,12 +155,6 @@ export const createStripeCheckout = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Invalid address or order items",
-    });
-  }
-  if (!process.env.STRIPE_WEBHOOK_SECRET?.trim()) {
-    return res.status(503).json({
-      success: false,
-      message: "Stripe payments require a configured webhook secret",
     });
   }
   if (!process.env.STRIPE_SECRET_KEY?.trim()) {

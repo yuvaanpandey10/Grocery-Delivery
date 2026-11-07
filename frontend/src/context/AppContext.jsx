@@ -305,6 +305,20 @@ export const AppContextProvider = ({ children }) => {
     return savedOrder;
   };
 
+  const startStripeCheckout = async ({ items, address }) => {
+    const { data } = await api.post("/api/order/stripe/checkout", {
+      items: items.map(({ product, quantity }) => ({
+        product: product._id,
+        quantity,
+      })),
+      address: address._id,
+    });
+    if (!data.success || !data.checkoutUrl) {
+      throw new Error(data.message || "Unable to start secure payment");
+    }
+    return data.checkoutUrl;
+  };
+
   const addProduct = async (formData) => {
     const { data } = await api.post("/api/product/add", formData);
     if (!data.success || !data.product) {
@@ -403,6 +417,7 @@ export const AppContextProvider = ({ children }) => {
     fetchAddresses,
     fetchSellerOrders,
     placeOrder,
+    startStripeCheckout,
     addProduct,
     updateProduct,
     updateProductStock,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 // toast is used here only for error messages (the success toasts are in the context)
 import toast from "react-hot-toast";
 // assets = icons (remove_icon = red X, arrow_right_icon_colored = arrow)
@@ -28,11 +29,15 @@ const Cart = () => {
     selectedAddress,
     setSelectedAddress,
     placeOrder,
+    startStripeCheckout,
   } = useAppContext();
 
   // ---------- LOCAL STATE (only used on this page) ----------
   // Is the address list (under "Change") open?
   const [showAddressList, setShowAddressList] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   // Ref on the address area, to detect clicks outside of it
   const addressRef = useRef(null);
 
@@ -54,6 +59,12 @@ const Cart = () => {
       window.removeEventListener("mousedown", onClick);
     };
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("payment") !== "cancelled") return;
+    toast("Payment was cancelled. Your cart is unchanged.");
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // 1) BUILD THE CART LIST
   // cartItems only has ids and counts, so we find the full product for each id
@@ -101,10 +112,15 @@ const Cart = () => {
     scrollToTop();
   };
 
-  const orderButtonText = selectedAddress ? "Place Order" : "Add Address";
+  const orderButtonText = selectedAddress
+    ? paymentMethod === "Stripe"
+      ? "Continue to Secure Payment"
+      : "Place Order"
+    : "Add Address";
 
   // 7) ORDER BUTTON CLICK
   const handleOrderButton = async () => {
+    if (isSubmitting) return;
     // Addresses and orders are tied to the authenticated account.
     if (!user) {
       navigate("/login", { state: { from: { pathname: "/cart" } } });
@@ -119,15 +135,26 @@ const Cart = () => {
       product: products.find((p) => p._id === item._id),
       quantity: item.quantity,
     }));
+    setIsSubmitting(true);
     try {
-      await placeOrder({ items, address: selectedAddress });
-      navigate("/my-orders");
-      scrollToTop();
+      if (paymentMethod === "Stripe") {
+        const checkoutUrl = await startStripeCheckout({
+          items,
+          address: selectedAddress,
+        });
+        window.location.assign(checkoutUrl);
+      } else {
+        await placeOrder({ items, address: selectedAddress });
+        navigate("/my-orders");
+        scrollToTop();
+      }
     } catch (error) {
       console.error("Unable to place order:", error);
       toast.error(
         error.response?.data?.message || error.message || "Unable to place order",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -319,13 +346,34 @@ const Cart = () => {
               )}
             </div>
 
-            {/* Online payments are not available in the backend yet. */}
             <p className="mt-6 text-sm font-medium uppercase text-gray-700">
               Payment Method
             </p>
-            <p className="mt-2 w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
-              Cash On Delivery
-            </p>
+            <div className="mt-2 space-y-2" role="radiogroup" aria-label="Payment method">
+              {[
+                { value: "COD", label: "Cash on Delivery" },
+                { value: "Stripe", label: "Pay securely with Stripe" },
+              ].map((method) => (
+                <label
+                  key={method.value}
+                  className={`flex cursor-pointer items-center gap-3 border bg-white px-3 py-3 text-sm transition ${
+                    paymentMethod === method.value
+                      ? "border-primary ring-1 ring-primary"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={method.value}
+                    checked={paymentMethod === method.value}
+                    onChange={() => setPaymentMethod(method.value)}
+                    className="accent-primary"
+                  />
+                  <span className="text-gray-700">{method.label}</span>
+                </label>
+              ))}
+            </div>
 
             <hr className="my-5 border-gray-300" />
 
@@ -353,9 +401,10 @@ const Cart = () => {
             <button
               type="button"
               onClick={handleOrderButton}
-              className="mt-6 w-full cursor-pointer bg-primary py-3 font-medium text-white transition hover:bg-primary-dull"
+              disabled={isSubmitting}
+              className="mt-6 w-full cursor-pointer bg-primary py-3 font-medium text-white transition hover:bg-primary-dull disabled:cursor-wait disabled:opacity-70"
             >
-              {orderButtonText}
+              {isSubmitting ? "Please wait..." : orderButtonText}
             </button>
           </div>
         </div>

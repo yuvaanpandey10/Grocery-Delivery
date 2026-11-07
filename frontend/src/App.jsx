@@ -8,6 +8,7 @@ import ProductDetails from "./pages/ProductDetails.jsx";
 import Cart from "./pages/Cart.jsx";
 import AddAddress from "./pages/AddAddress.jsx";
 import MyOrders from "./pages/MyOrders.jsx";
+import PaymentResult from "./pages/PaymentResult.jsx";
 import SellerLayout from "./pages/seller/SellerLayout.jsx";
 import AddProduct from "./pages/seller/AddProduct.jsx";
 import ProductList from "./pages/seller/ProductList.jsx";
@@ -94,6 +95,10 @@ const App = () => {
             <Route path="/cart" element={requireUser(<Cart />)} />
             <Route path="/add-address" element={requireUser(<AddAddress />)} />
             <Route path="/my-orders" element={requireUser(<MyOrders />)} />
+            <Route
+              path="/payment/result"
+              element={requireUser(<PaymentResult />)}
+            />
             <Route path="/contact" element={requireUser(<Contact />)} />
             <Route path="/seller" element={<SellerLayout />}>
               <Route index element={<AddProduct key="add" />} />

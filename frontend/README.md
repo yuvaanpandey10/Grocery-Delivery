@@ -10,10 +10,14 @@
 3. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`,
    and `SMTP_FROM` to enable password reset emails.
 4. Run `npm --prefix backend run seed:demo-products:dry-run` to verify the
-   configured database target, then `npm --prefix backend run seed:demo-products`
-   to import the 35 original frontend demo products and upload their images to
-   Cloudinary. The import is safe to rerun and does not overwrite existing
-   seeded products.
+   configured database target and see how many products need insertion or
+   image repair. Then run `npm --prefix backend run seed:demo-products` to
+   import the 35 original frontend demo products and upload their images to
+   Cloudinary. The import is safe to rerun: existing products with valid
+   Cloudinary images are left alone, while missing or invalid demo image URLs
+   are repaired. If Cloudinary URLs are present but their images still fail to
+   load, force re-upload the demo images with
+   `npm --prefix backend run seed:demo-products -- --repair-images`.
 5. Start the backend with `npm --prefix backend run dev` and frontend with
    `npm --prefix frontend run dev`. The frontend uses
    `http://localhost:4000` in development. Set `VITE_BACKEND_URL` when the API

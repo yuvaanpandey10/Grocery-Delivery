@@ -26,8 +26,7 @@
 The home page is public. Product browsing, cart changes, checkout, orders, and
 contact messages require a customer account. The seller/admin area uses its
 separate login. User sessions use HTTP-only cookies. Orders currently support
-Cash on Delivery; online checkout is not enabled because there is no payment
-endpoint.
+Cash on Delivery and Stripe Checkout when Stripe credentials are configured.
 
 ## Free deployment (Render)
 
@@ -50,6 +49,10 @@ settings.
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`: your
      email provider's SMTP settings. These are required for the API to start in
      production and enable password reset/contact email.
+   - `STRIPE_SECRET_KEY`: your Stripe secret API key. Start with a test key
+     beginning with `sk_test_`; `STRIPE_MODE` is set to `test` by default.
+     Use live mode only after testing and set `STRIPE_MODE=live` with a
+     matching `sk_live_` key.
    Render generates `JWT_SECRET` and sets `NODE_ENV=production`. Render
    supplies the public app URL automatically, so `CLIENT_URL`, `PORT`, and
    `VITE_BACKEND_URL` do not need to be set for this single-origin deployment.

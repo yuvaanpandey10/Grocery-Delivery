@@ -68,7 +68,7 @@ const validateProductionEnvironment = () => {
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean),
-  ];
+  ].filter(Boolean);
   frontendOrigins.forEach((origin) => {
     const parsedOrigin = new URL(origin);
     if (parsedOrigin.protocol !== "https:" || parsedOrigin.origin !== origin) {

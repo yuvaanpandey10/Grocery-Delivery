@@ -9,7 +9,10 @@ const normalizeEmail = (email) =>
 
 const passwordResetEmailTransport = () => {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
-  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    process.env.CLIENT_URL ||
+    process.env.RENDER_EXTERNAL_URL;
   const port = Number(SMTP_PORT);
   if (
     !SMTP_HOST ||

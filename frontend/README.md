@@ -25,25 +25,41 @@ separate login. User sessions use HTTP-only cookies. Orders currently support
 Cash on Delivery; online checkout is not enabled because there is no payment
 endpoint.
 
-## Production deployment
+## Free deployment (Render)
 
-1. Deploy the frontend and backend behind HTTPS. Configure the frontend build
-   variable `VITE_BACKEND_URL` to the public API origin. If both are served from
-   one origin, the frontend falls back to that origin.
-2. Set backend `NODE_ENV=production`, `MONGODB_URI`, a newly generated
-   `JWT_SECRET` of at least 32 characters, `ADMIN_EMAIL`, an
-   `ADMIN_PASSWORD` of at least 12 characters, all three Cloudinary variables,
-   `CLIENT_URL` to the exact HTTPS frontend origin, and the SMTP variables
-   listed above. Set `FRONTEND_URL` to HTTPS if overriding it, and add any
-   additional frontend origins as a comma-separated `CORS_ORIGINS` value.
-3. Keep production credentials in the hosting provider's secret manager. Never
-   commit `.env` files. Use a separate production database and Cloudinary
-   account, and rotate any credentials that have been used for development.
-4. Run `npm --prefix backend test`, run `npm --prefix backend audit`, build the
-   frontend with `npm --prefix frontend run build`, and verify the backend
-   `/health` endpoint after deployment.
+The Render Blueprint in `../render.yaml` builds the frontend and backend and
+serves both from one HTTPS address. This keeps login cookies first-party and
+avoids needing a separate frontend domain. Keep using your existing MongoDB
+and Cloudinary accounts; enter their values only in Render's environment
+settings.
 
-Set `SMTP_FROM` to the mailbox that should receive contact messages; password
-reset emails use the same SMTP configuration. A live deployment also requires
-the production database, image storage, email delivery, frontend and API
-origins, and hosting platform to be configured and tested.
+1. Push the repository to GitHub. Confirm `backend/.env` is not committed; it
+   is ignored by Git. Do not copy its contents into the repository.
+2. In Render, create a Blueprint instance using this repository and its
+   `render.yaml`. It creates a free web service named `grocery-delivery`.
+   Provide the requested environment values in Render's secure settings:
+   - `MONGODB_URI`: your existing MongoDB connection string.
+   - `ADMIN_EMAIL` and `ADMIN_PASSWORD`: the seller/admin login; use a strong
+     password of at least 12 characters.
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
+     `CLOUDINARY_API_SECRET`: your existing Cloudinary credentials.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`: your
+     email provider's SMTP settings. These are required for the API to start in
+     production and enable password reset/contact email.
+   Render generates `JWT_SECRET` and sets `NODE_ENV=production`. Render
+   supplies the public app URL automatically, so `CLIENT_URL`, `PORT`, and
+   `VITE_BACKEND_URL` do not need to be set for this single-origin deployment.
+3. Wait for deployment to finish. Open the Render service's `/health` address
+   (for example, `https://grocery-delivery.onrender.com/health`) and confirm it
+   returns `{"success":true,"status":"ok"}`. Use the actual app URL shown in
+   Render.
+4. Open the service's main HTTPS address. Test the home page and a nested
+   route directly, browse products, register/login, and check cart and
+   seller/admin login. Also test email flows if SMTP is configured.
+
+Render's free web service may sleep when idle, so the first request after
+inactivity can be slow. Production requires a `JWT_SECRET` of at least 32
+characters and an admin password of at least 12 characters. If you later
+connect a custom domain or a separate frontend, set `CLIENT_URL` to that exact
+HTTPS origin and add other allowed frontend origins to `CORS_ORIGINS`.
+Keep credentials in host secret settings, never in Git.

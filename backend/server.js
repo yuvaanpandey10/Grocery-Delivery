@@ -1,5 +1,7 @@
 import dotenv from "dotenv/config";
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
@@ -16,6 +18,9 @@ import { handleStripeWebhook } from "./controllers/stripeController.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const frontendBuildPath = fileURLToPath(
+  new URL("../frontend/dist", import.meta.url),
+);
 
 const requiredEnvironment = [
   "MONGODB_URI",
@@ -30,7 +35,9 @@ const requiredEnvironment = [
 const validateProductionEnvironment = () => {
   const missing = [
     ...requiredEnvironment,
-    "CLIENT_URL",
+    ...(process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL
+      ? []
+      : ["CLIENT_URL or RENDER_EXTERNAL_URL"]),
     "SMTP_HOST",
     "SMTP_PORT",
     "SMTP_USER",
@@ -55,7 +62,7 @@ const validateProductionEnvironment = () => {
   }
 
   const frontendOrigins = [
-    process.env.CLIENT_URL,
+    process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL,
     process.env.FRONTEND_URL,
     ...(process.env.CORS_ORIGINS || "")
       .split(",")
@@ -87,6 +94,9 @@ const allowedOrigins = new Set([
     ? []
     : ["http://localhost:5173", "http://127.0.0.1:5173"]),
   ...(process.env.CLIENT_URL ? [new URL(process.env.CLIENT_URL).origin] : []),
+  ...(process.env.RENDER_EXTERNAL_URL
+    ? [new URL(process.env.RENDER_EXTERNAL_URL).origin]
+    : []),
   ...(process.env.FRONTEND_URL
     ? [new URL(process.env.FRONTEND_URL).origin]
     : []),
@@ -117,9 +127,13 @@ app.use(
 );
 
 // Define routes
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(frontendBuildPath));
+} else {
+  app.get("/", (req, res) => {
+    res.send("API is running...");
+  });
+}
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, status: "ok" });
 });
@@ -132,6 +146,15 @@ app.use("/api/order", orderRouter);
 app.use("/api/contact", contactRouter);
 
 app.use((req, res) => {
+  if (
+    process.env.NODE_ENV === "production" &&
+    req.method === "GET" &&
+    req.path !== "/api" &&
+    !req.path.startsWith("/api/")
+  ) {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
+    return;
+  }
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
